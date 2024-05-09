@@ -1,0 +1,4 @@
+/.spyproject
+/dist
+/src/*.egg-info
+*key.txt

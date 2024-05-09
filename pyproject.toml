@@ -1,0 +1,22 @@
+[project]
+
+name = "streak"
+version = "1.0.0"
+authors = [{name="MekJohn", email="gaudio90@hotmail.it" },]
+
+description = "Win toast notification package for python"
+
+readme = "README.md"
+license = {file = "LICENSE"}
+
+requires-python = ">=3.10"
+classifiers = ["Programming Language :: Python :: 3",
+                "License :: OSI Approved :: MIT License",
+                "Operating System :: Windows"]
+
+[project.urls]
+Homepage = "https://github.com/MekJohn"
+
+[build-system]
+requires = ["setuptools>=61.0", "winsdk"]
+build-backend = "setuptools.build_meta"
