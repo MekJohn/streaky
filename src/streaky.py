@@ -1,6 +1,7 @@
 import requests as rqs
 import base64
 
+# Insert your api key here.
 KEYPATH = r"../key.txt"
 
 def get_key(key_filepath: str):
