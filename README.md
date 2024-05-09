@@ -11,9 +11,6 @@ pip install streaky
 
 ## Usage
 
-### Fast toast
-Send default notification rapidly to screen.
-
 ```python
 import streaky as sr
 
