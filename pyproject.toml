@@ -4,7 +4,7 @@ name = "streak"
 version = "1.0.0"
 authors = [{name="MekJohn", email="gaudio90@hotmail.it" },]
 
-description = "Win toast notification package for python"
+description = "Streak© easy api python module"
 
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -18,5 +18,5 @@ classifiers = ["Programming Language :: Python :: 3",
 Homepage = "https://github.com/MekJohn"
 
 [build-system]
-requires = ["setuptools>=61.0", "winsdk"]
+requires = ["setuptools>=61.0", "requests"]
 build-backend = "setuptools.build_meta"
