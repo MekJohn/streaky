@@ -6,6 +6,8 @@ import io
 import pypdf as pp
 import re
 
+import api
+
 # Insert your api key here.
 KEYPATH = r"../key.txt"
 
@@ -577,8 +579,8 @@ class Supervisor:
 
 
 
-key64 = Streak.get_key64_fromfile()
-streak = Streak(key64)
+# key64 = Streak.get_key64_fromfile()
+streak = Streak.connect()
 
 pip = Pipeline(streak, name = "OFFERTE")
 box = Box(streak, pip, name = "0896")
