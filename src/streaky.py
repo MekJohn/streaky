@@ -15,7 +15,7 @@ KEYPATH = r"../key.txt"
 
   
 
-class Streak:
+class Streaky:
     
 
     DOCS = r"https://streak.readme.io/reference/get-current-user"
@@ -552,42 +552,42 @@ class File:
         
 
 
-class Supervisor:
+# class Supervisor:
     
-    @staticmethod
-    def update_deal(box: object):
+#     @staticmethod
+#     def update_deal(box: object):
         
-        files = [f for f in box.files if f["fileName"].startswith("MKP-F")]
-        if files != []:
-            sorted_files = sorted(files, key = lambda x: x["lastSavedTimestamp"], reverse = True)[0]
-            filedata = streak.get_file_content(sorted_files["fileKey"]).content
-            filedata = io.BytesIO(filedata)
-            document = pp.PdfReader(filedata)
+#         files = [f for f in box.files if f["fileName"].startswith("MKP-F")]
+#         if files != []:
+#             sorted_files = sorted(files, key = lambda x: x["lastSavedTimestamp"], reverse = True)[0]
+#             filedata = streak.get_file_content(sorted_files["fileKey"]).content
+#             filedata = io.BytesIO(filedata)
+#             document = pp.PdfReader(filedata)
     
-            text = document.pages[0].extract_text()
+#             text = document.pages[0].extract_text()
     
-            pattern = re.compile(r"Signature\s€\s(?P<deal>.*)Impo", re.DOTALL)
-            found = float(pattern.search(text).groupdict()["deal"].replace(".", "_").replace(",", "."))
-            field = [fd for fd in Pipeline(box.auth, key = box["pipelineKey"]).fields if fd["name"] == "Deal"][0]
-            field_key = field["key"]
-            print(f"Inserting '{found}' in the field '{field['name']}")
-            response = box.auth.update_field_value(box.key, field_key, str(found))
+#             pattern = re.compile(r"Signature\s€\s(?P<deal>.*)Impo", re.DOTALL)
+#             found = float(pattern.search(text).groupdict()["deal"].replace(".", "_").replace(",", "."))
+#             field = [fd for fd in Pipeline(box.auth, key = box["pipelineKey"]).fields if fd["name"] == "Deal"][0]
+#             field_key = field["key"]
+#             print(f"Inserting '{found}' in the field '{field['name']}")
+#             response = box.auth.update_field_value(box.key, field_key, str(found))
             
-            return response
+#             return response
 
         
 
 
 
 # key64 = Streak.get_key64_fromfile()
-streak = Streak.connect()
+# streak = Streak.connect()
 
-pip = Pipeline(streak, name = "OFFERTE")
-box = Box(streak, pip, name = "0896")
+# pip = Pipeline(streak, name = "OFFERTE")
+# box = Box(streak, pip, name = "0896")
 
-# aa = Supervisor.update_deal(box)
+# # aa = Supervisor.update_deal(box)
 
-ff = File(streak, key ="agxzfm1haWxmb29nYWVyOwsSDE9yZ2FuaXphdGlvbiIYaW5mby5tZWtwaXBpbmdAZ21haWwuY29tDAsSBEZpbGUYgICF6IzD1wsM")
+# ff = File(streak, key ="agxzfm1haWxmb29nYWVyOwsSDE9yZ2FuaXphdGlvbiIYaW5mby5tZWtwaXBpbmdAZ21haWwuY29tDAsSBEZpbGUYgICF6IzD1wsM")
 
 
 

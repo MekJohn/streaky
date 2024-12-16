@@ -1,6 +1,8 @@
-import requests as rqs
+import requests as req
 import base64
-from enum import Enum
+import time as tm
+import pandas as pd
+
 
 import endpoints as endp
 from endpoints import jformat
@@ -14,7 +16,34 @@ class Auth:
     ENDP = r"https://api.streak.com/api"
 
     def __init__(self, auth64: bytes) -> object:
-        self.auth64: bytes = auth64
+        self._auth64: bytes = auth64     
+        self._log = [(tm.time_ns(), "START", "", None)]
+        
+    
+    def __str__(self):
+        return f"{self.key}"
+    
+    def __repr__(self):
+        return f"<Auth '{self.key}'>"
+    
+    def __getitem__(self, item):
+        return self._log[item] if item < len(self._log) else None
+    
+    @property
+    def is_authorized(self):
+        enpoint = jformat([endp.BASE, endp.USER.ME])
+        response = self.get(enpoint)
+        if response.status_code == 200:
+            return True
+        else:
+            raise ConnectionError(
+                f"Authorization failed. Status code: {response.status_code}")     
+    
+    @property
+    def log(self):
+        log_columns = "Time", "Type", "Url", "Response"
+        table = pd.DataFrame(data=self._log,columns=log_columns)
+        return table
         
     @property
     def key(self):
@@ -23,25 +52,32 @@ class Auth:
         
     @classmethod
     def connect(cls, key_filepath: str = ""):
-        key64 = cls.fromfile(key_filepath)
+        key64 = cls._from_file(key_filepath)
         return cls(key64)
 
-    def get(self, url: str) -> rqs.models.Response:        
-        query = {"authorization": f"Basic {self.auth64.decode()}",
+
+    def _logger(self, *data):
+        self._log.append(data)
+        
+
+    def get(self, url: str) -> req.models.Response:        
+        query = {"authorization": f"Basic {self.key.decode()}",
                  "accept": "application/json",
                  "Content-Type": "application/json"}
-        response = rqs.get(url, headers = query)
+        response = req.get(url, headers = query)
+        self._logger(tm.time_ns(), "GET", url, response)
         return response
     
     def post(self, url, payload: dict = None):
-        query = {"authorization": f"Basic {self.auth64.decode()}",
+        query = {"authorization": f"Basic {self.key.decode()}",
                  "accept": "application/json",
                  "Content-Type": "application/json"}
-        response = rqs.post(url, headers = query, json = payload)
+        response = req.post(url, headers = query, json = payload)
+        self._logger(tm.time_ns(), "POST", url, response)
         return response
-    
+
     @staticmethod
-    def fromfile(key_filepath: str = ""):
+    def _from_file(key_filepath: str = "") -> bytes:
         with open(key_filepath, "r") as file:
             key = file.read()
         encrypted_key = base64.b64encode(key.encode())
@@ -51,7 +87,8 @@ class Auth:
 
     
     
-class User:
+class RequestUser:
+    # TODO come pipeline
     
     
     def me(self) -> object:
@@ -60,55 +97,71 @@ class User:
         response = self.get(end_point)
         return response
 
-    def get_user(self, user_key: str) -> rqs.models.Response:
+    def get_user(self, user_key: str) -> object:
         RESOURCE = fr"/v1/users/{user_key}"
         end_point = self.ENDP + RESOURCE
         response = self.get(end_point)
         return response
 
-    def get_my_team(self) -> rqs.models.Response:
+    def get_my_team(self) -> object:
         RESOURCE = r"/v2/users/me/teams"
         end_point = self.ENDP + RESOURCE
         response = self.get(end_point)
         return response
 
 
-class PipelineQuery:    
 
-    base = endp.BASE.ROOT
-    connect = Auth.connect
-    resources = endp.PIPELINE
+
+
+class RequestPipeline:    
+
+    _base = endp.BASE.ROOT
+    _connect = Auth.connect
+    _resources = endp.PIPELINE
     
-    def __init__(self, auth: object, pipeline_key: str):
-        data = self.get_pipeline(auth, pipeline_key)
-        if data.status_code == 200:
-            self.auth = auth
-            self.key = pipeline_key
-            self.data = data.json()
+    def __init__(self, auth: object, pipeline_data: dict):
+        self.timestamp_ns = tm.time_ns()
+        self.auth = auth
+        self.data = pipeline_data
+        self.name = self.data["name"]
+        self.key = self.data["key"]
+        
+    
+    def __str__(self):
+        return f"{self.key}"
+    
+    def __repr__(self):
+        return f"<RequestPipeline '{self.name}'>"
+    
     
     @classmethod
-    def list_pipelines(cls, auth: object) -> object:
-        blocks = [cls.base, cls.resources.LIST]
-        
+    def list(cls, auth: object) -> object:
+        blocks = [cls._base, cls._resources.LIST]   
         end_point = jformat(blocks)
         response = auth.get(end_point)
-        return response
+        if response.status_code == 200:
+            for pip in response.json():
+                yield cls(auth, pip)
 
     @classmethod
-    def get_pipeline(cls, auth: object, pipeline_key: str):
-        blocks = [cls.base, cls.resources.GET]
+    def from_key(cls, auth: object, pipeline_key: str) -> object:
+        blocks = [cls._base, cls._resources.GET]
         kargs = {"pipeline_key": pipeline_key}
-        
         end_point = jformat(blocks, **kargs)
         response = auth.get(end_point)
-        return response
+        if response.status_code == 200:
+            pip = response.json()
+            return cls(auth, pip)
 
     
     def is_pipeline_key(self, key: str):
         return True if self.get_pipeline(key).status_code == 200 else False
 
 
-class Box:
+
+class RequestBox:
+    
+    # TODO come pipeline
     
     LIST_BOXES = r"/v1/pipelines/{pipeline_key}/boxes?sortBy=creationTimestamp"
     GET_BOX = r"/v1/boxes/{box_key}"
@@ -154,7 +207,9 @@ class Box:
         return True if self.get_box(key).status_code == 200 else False
     
 
-class Thread:
+class RequestThread:
+    
+    # TODO come pipeline
     
     def list_threads(self, box_key: str):
         end_point = self.ENDP + fr"/v1/boxes/{box_key}/threads"
@@ -168,7 +223,9 @@ class Thread:
         return response
         
 
-class Field:
+class RequestField:
+    
+    # TODO come pipeline
     
     auth = Auth
     resources = endp.FIELD
@@ -199,7 +256,9 @@ class Field:
 
 
 
-class FileQuery:
+class RequestFile:
+    
+    # TODO come pipeline
     
     connect = Auth.connect
     resources = endp.FILE

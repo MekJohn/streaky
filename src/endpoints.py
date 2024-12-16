@@ -53,7 +53,5 @@ def jformat(blocks: list, base: str = None, **kargs):
     """
     Join strings and formatting them.
     """
-    base = base if base is not None else BASE.ROOT
-    blocks = [base] + blocks
     endpoint = "".join(blocks).format(**kargs)
     return endpoint
