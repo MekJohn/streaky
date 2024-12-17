@@ -9,49 +9,44 @@ class BASE(StrEnum):
     
 class USER(StrEnum):
     
-    ME = r"/v1/users/me"
-    GET = r"/v1/users/{user_key}"
+    ME = BASE.ROOT + r"/v1/users/me"
+    GET = BASE.ROOT + r"/v1/users/{user_key}"
     
 class TEAM(StrEnum):
-    
-    MY = r"/v2/users/me/teams"
+
+    MY = BASE.ROOT + r"/v2/users/me/teams"
     
 class PIPELINE(StrEnum):
     
-    GET = r"/v1/pipelines/{pipeline_key}"
-    LIST = r"/v1/pipelines?sortBy=creationTimestamp%20"
+    GET = BASE.ROOT + r"/v1/pipelines/{pipeline_key}"
+    LIST = BASE.ROOT + r"/v1/pipelines?sortBy=creationTimestamp%20"
     
 class BOX(StrEnum):
     
-    GET_BY_KEY = r"/v1/boxes/{box_key}"
-    GET_BY_NAME = r"/v1/search?"
-    LIST = r"/v1/pipelines/{pipeline_key}/boxes?sortBy=creationTimestamp"
-    FIELD_NEWVAL = r"/v1/boxes/{box_key}/fields/{field_key}"
-    FILE = r"/v1/boxes/{box_key}/files"
+    GET_BY_KEY = BASE.ROOT + r"/v1/boxes/{box_key}"
+    GET_BY_NAME = BASE.ROOT + r"/v1/search?"
+    LIST = BASE.ROOT + \
+        r"""
+        /v1/pipelines/{pipeline_key}/boxes?sortBy=creationTimestamp
+        """
+    FIELD_NEWVAL = BASE.ROOT + r"/v1/boxes/{box_key}/fields/{field_key}"
+    FILE = BASE.ROOT + r"/v1/boxes/{box_key}/files"
     
 class THREAD(StrEnum):
     
-    GET = r"/v1/threads/{thread_key}"
-    LIST = r"/v1/boxes/{box_key}/threads"
+    GET = BASE.ROOT + r"/v1/threads/{thread_key}"
+    LIST = BASE.ROOT + r"/v1/boxes/{box_key}/threads"
     
     
 class FIELD(StrEnum):
     
-    GET = r"/v1/pipelines/{pipeline_key}/fields/{field_key}"
+    GET = BASE.ROOT + r"/v1/pipelines/{pipeline_key}/fields/{field_key}"
     UPDATE_NAME = ""
-    LIST = r"/v1/pipelines/{pipeline_key}/fields"
+    LIST = BASE.ROOT + r"/v1/pipelines/{pipeline_key}/fields"
     
     
 class FILE(StrEnum):
     
-    GET = r"/v1/files/{file_key}"
-    CONTENT = r"/v1/files/{file_key}/contents"
+    GET = BASE.ROOT + r"/v1/files/{file_key}"
+    CONTENT = BASE.ROOT + r"/v1/files/{file_key}/contents"
     
-
-
-def jformat(blocks: list, base: str = None, **kargs):
-    """
-    Join strings and formatting them.
-    """
-    endpoint = "".join(blocks).format(**kargs)
-    return endpoint

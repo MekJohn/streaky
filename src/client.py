@@ -3,9 +3,7 @@ import base64
 import time as tm
 import pandas as pd
 
-
 import endpoints as endp
-from endpoints import jformat
 
 # Insert your api key here.
 
@@ -30,14 +28,10 @@ class Auth:
         return self._log[item] if item < len(self._log) else None
     
     @property
-    def is_authorized(self):
-        enpoint = jformat([endp.BASE, endp.USER.ME])
+    def is_connected(self):
+        enpoint = endp.USER.ME
         response = self.get(enpoint)
-        if response.status_code == 200:
-            return True
-        else:
-            raise ConnectionError(
-                f"Authorization failed. Status code: {response.status_code}")     
+        return True if response.status_code == 200 else False
     
     @property
     def log(self):
@@ -88,35 +82,77 @@ class Auth:
     
     
 class RequestUser:
-    # TODO come pipeline
     
+    _resources = endp.USER
     
-    def me(self) -> object:
-        RESOURCE = r"/v1/users/me"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
+    def __init__(self, auth: object, user_data: dict):
+        self.timestamp_ns = tm.time_ns()
+        self.auth = auth
+        self.data = user_data
+        self.email = self.data["email"]
+        self.key = self.data["key"]
+        
+    
+    def __str__(self):
+        return f"{self.key}"
+    
+    def __repr__(self):
+        return f"<RequestUser '{self.email}'>"
+    
+    @classmethod
+    def me(cls, auth):
+        end_point = cls._resources.ME
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            return cls(auth, response.json())
 
-    def get_user(self, user_key: str) -> object:
-        RESOURCE = fr"/v1/users/{user_key}"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
+    @classmethod
+    def get(cls, auth, user_key: str):
+        end_point = cls._resources.GET.format(
+            **{"user_key": user_key})
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            return cls(auth, response.json())
+    
+    @staticmethod
+    def team(auth):
+        return RequestTeam.my(auth)
+        
 
-    def get_my_team(self) -> object:
-        RESOURCE = r"/v2/users/me/teams"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
-
-
+class RequestTeam:
+    
+    _resources = endp.TEAM
+    
+    def __init__(self, auth: object, team_data: dict):
+        self.timestamp_ns = tm.time_ns()
+        self.auth = auth
+        self.data = team_data
+        self.name = self.data["name"]
+        self.key = self.data["key"]
+        
+    
+    def __str__(self):
+        return f"{self.key}"
+    
+    def __repr__(self):
+        return f"<RequestTeam '{self.name}'>"
+    
+    @classmethod
+    def my(cls, auth):
+        end_point = cls._resources.MY
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            keys_to_keep = ("creationDate", "creator", 
+                            "name", "key", "members", 
+                            "lastSavedTimestamp")
+            all_data = response.json()["results"][0]
+            data = {k: v for k,v in all_data.items() if k in keys_to_keep}
+            return cls(auth, data)
 
 
 
 class RequestPipeline:    
 
-    _base = endp.BASE.ROOT
-    _connect = Auth.connect
     _resources = endp.PIPELINE
     
     def __init__(self, auth: object, pipeline_data: dict):
@@ -136,56 +172,70 @@ class RequestPipeline:
     
     @classmethod
     def list(cls, auth: object) -> object:
-        blocks = [cls._base, cls._resources.LIST]   
-        end_point = jformat(blocks)
+        end_point = "".join([cls._base, cls._resources.LIST])
         response = auth.get(end_point)
         if response.status_code == 200:
             for pip in response.json():
                 yield cls(auth, pip)
 
     @classmethod
-    def from_key(cls, auth: object, pipeline_key: str) -> object:
-        blocks = [cls._base, cls._resources.GET]
-        kargs = {"pipeline_key": pipeline_key}
-        end_point = jformat(blocks, **kargs)
+    def get(cls, auth: object, pipeline_key: str) -> object:
+        end_point = cls._resources.GET.format(
+            **{"pipeline_key": pipeline_key})
         response = auth.get(end_point)
         if response.status_code == 200:
             pip = response.json()
             return cls(auth, pip)
 
-    
-    def is_pipeline_key(self, key: str):
-        return True if self.get_pipeline(key).status_code == 200 else False
-
 
 
 class RequestBox:
     
-    # TODO come pipeline
+    _resources = endp.BOX
     
-    LIST_BOXES = r"/v1/pipelines/{pipeline_key}/boxes?sortBy=creationTimestamp"
-    GET_BOX = r"/v1/boxes/{box_key}"
-    
-    
-    def get_box(self, auth: object, box_key: str):
-        RESOURCE = fr"/v1/boxes/{box_key}"
-        end_point = auth.ENDP + RESOURCE
-        response = auth.get(end_point)
-        return response
-    
-    def get_box_by_name(self, box_name: str, stage_key: str = None, pipeline_key: str = None):
-        RESOURCE = r"/v1/search?"
+    def __init__(self, auth: object, box_data: dict):
+        self.timestamp_ns = tm.time_ns()
+        self.auth = auth
+        self.data = box_data
+        self.name = self.data["name"]
+        self.key = self.data["key"]
         
-        end_point = self.ENDP + RESOURCE
+    
+    def __str__(self):
+        return f"{self.key}"
+    
+    def __repr__(self):
+        return f"<RequestBox '{self.name}'>"
+    
+    
+    @classmethod
+    def get_by_key(cls, auth: object, box_key: str):
+        end_point = cls._resources.GET_BY_KEY.format(box_key = box_key)
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            return cls(auth, response.json())
+    
+    @classmethod
+    def get_by_name(cls, auth, box_name: str, 
+                    stage_key: str = None, pipeline_key: str = None):
+        # TODO
+        end_point = cls._resources.GET_BY_NAME
         end_point += "" if pipeline_key is None else fr"pipelineKey={pipeline_key}&"
         end_point += "" if stage_key is None else fr"stageKey={stage_key}&"
         end_point = end_point + fr"name={box_name}"
         
-        response = self.get(end_point)
-        return response
+        end_point.format(box_name = box_name, 
+                         pipeline_key = pipeline_key, 
+                         stage_key = stage_key)
+        
+        search_response = auth.get(end_point)
+        if search_response.status_code == 200:
+            boxlist = search_response.json()["results"]["boxes"]
+            for box in boxlist:
+                yield cls.get_by_key(auth, box["boxKey"])
 
-
-    def list_boxes(self, pipeline_key: str, page: int = None, 
+    @classmethod
+    def list_boxes(cls, pipeline_key: str, page: int = None, 
                    stage_key: str = None, limit: int = None):
         RESOURCE = fr"/v1/pipelines/{pipeline_key}/boxes?sortBy=creationTimestamp"
         
