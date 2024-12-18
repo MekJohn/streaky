@@ -172,7 +172,7 @@ class RequestPipeline:
     
     @classmethod
     def list(cls, auth: object) -> object:
-        end_point = "".join([cls._base, cls._resources.LIST])
+        end_point = cls._resources.LIST
         response = auth.get(end_point)
         if response.status_code == 200:
             for pip in response.json():
@@ -198,7 +198,7 @@ class RequestBox:
         self.auth = auth
         self.data = box_data
         self.name = self.data["name"]
-        self.key = self.data["key"]
+        self.key = self.data["boxKey"]
         
     
     def __str__(self):
@@ -218,36 +218,54 @@ class RequestBox:
     @classmethod
     def get_by_name(cls, auth, box_name: str, 
                     stage_key: str = None, pipeline_key: str = None):
-        # TODO
-        end_point = cls._resources.GET_BY_NAME
-        end_point += "" if pipeline_key is None else fr"pipelineKey={pipeline_key}&"
-        end_point += "" if stage_key is None else fr"stageKey={stage_key}&"
-        end_point = end_point + fr"name={box_name}"
+        end_point = cls._resources._GBN_HEAD
+        end_point += "" if pipeline_key is None else cls._resources._GBN_IN_PIP
+        end_point += "" if stage_key is None else cls._resources._GBN_AT_STG
+        end_point += cls._resources._GBN_TAIL
         
-        end_point.format(box_name = box_name, 
-                         pipeline_key = pipeline_key, 
-                         stage_key = stage_key)
+        end_point = end_point.format(box_name = box_name, 
+                                     pipeline_key = pipeline_key, 
+                                     stage_key = stage_key)
         
         search_response = auth.get(end_point)
         if search_response.status_code == 200:
             boxlist = search_response.json()["results"]["boxes"]
             for box in boxlist:
-                yield cls.get_by_key(auth, box["boxKey"])
+                box_data = box["boxKey"]
+                yield cls.get_by_key(auth, box_data)
 
     @classmethod
-    def list_boxes(cls, pipeline_key: str, page: int = None, 
-                   stage_key: str = None, limit: int = None):
-        RESOURCE = fr"/v1/pipelines/{pipeline_key}/boxes?sortBy=creationTimestamp"
+    def list(cls, auth: object, pipeline_key: str, page: int = None, 
+             stage_key: str = None, limit: int = None):
+        """
+        To limit the response, 'limit' parameter need to be set.
+        The 'page' parameter than can be used to move around the response.
         
-        end_point = self.ENDP + RESOURCE
-        end_point += fr"&page={page}" if page is not None else ""
-        end_point += fr"&stageKey={stage_key}" if stage_key is not None else ""
-        end_point += fr"&limit={limit}" if limit is not None else ""
+        If no page is set while limiting, the complete response will be 
+        retrieved by the api. Same when 'page' is set but 'limit' is none.
         
-        response = self.get(end_point)
-        return response
+        Note:
+            no 'hasNextPage' attribute found as mentioned in the api docs.
+        """
+        
+        raw_ep = cls._resources._LIST_HEAD
+        raw_ep += "" if page is None else cls._resources._LST_OPT_PAGE
+        raw_ep += "" if stage_key is None else cls._resources._LST_OPT_STAGE
+        raw_ep += "" if limit is None else cls._resources._LST_OPT_LIMIT
+        
+        end_point = raw_ep.format(pipeline_key = pipeline_key,
+                                  page = page, stage_key = stage_key, 
+                                  limit = limit)
+        
+    
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            boxlist = response.json()
+            for box_data in boxlist:
+                yield cls(auth, box_data)
     
     def get_box_files(self, box_key: str):
+        # TODO
         RESOURCE = fr"/v1/boxes/{box_key}/files"
         end_point = self.ENDP + RESOURCE
         response = self.get(end_point)
