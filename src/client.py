@@ -264,7 +264,8 @@ class RequestBox:
             for box_data in boxlist:
                 yield cls(auth, box_data)
     
-    def get_box_files(self, box_key: str):
+    @classmethod
+    def files(cls, auth: object, box_key: str):
         # TODO
         RESOURCE = fr"/v1/boxes/{box_key}/files"
         end_point = self.ENDP + RESOURCE
@@ -327,6 +328,15 @@ class RequestField:
 class RequestFile:
     
     # TODO come pipeline
+    
+    _resources = endp.FILE
+    
+    def __init__(self, auth: object, file_data: dict):
+        self.timestamp_ns = tm.time_ns()
+        self.auth = auth
+        self.data = file_data
+        # self.name = self.data["name"]
+        # self.key = self.data["boxKey"]
     
     connect = Auth.connect
     resources = endp.FILE
