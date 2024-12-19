@@ -2,6 +2,7 @@ import requests as req
 import base64
 import time as tm
 import pandas as pd
+from io import BytesIO
 
 import endpoints as endp
 
@@ -85,10 +86,10 @@ class RequestUser:
     
     _resources = endp.USER
     
-    def __init__(self, auth: object, user_data: dict):
+    def __init__(self, auth: object, user_data: dict, **additional_data):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = user_data
+        self.data = user_data.update(additional_data)
         self.email = self.data["email"]
         self.key = self.data["key"]
         
@@ -125,10 +126,10 @@ class RequestTeam:
     
     _resources = endp.TEAM
     
-    def __init__(self, auth: object, team_data: dict):
+    def __init__(self, auth: object, team_data: dict, **additional_data):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = team_data
+        self.data = team_data.update(additional_data)
         self.name = self.data["name"]
         self.key = self.data["key"]
         
@@ -159,10 +160,10 @@ class RequestPipeline:
 
     _resources = endp.PIPELINE
     
-    def __init__(self, auth: object, pipeline_data: dict):
+    def __init__(self, auth: object, pipeline_data: dict, **additional_data):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = pipeline_data
+        self.data = pipeline_data.update(additional_data)
         self.name = self.data["name"]
         self.key = self.data["key"]
         
@@ -199,10 +200,10 @@ class RequestBox:
     
     _resources = endp.BOX
     
-    def __init__(self, auth: object, box_data: dict):
+    def __init__(self, auth: object, box_data: dict, **additional_data):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = box_data
+        self.data = box_data.update(additional_data)
         self.name = self.data["name"]
         self.key = self.data["boxKey"]
 
@@ -280,8 +281,8 @@ class RequestBox:
         if response.status_code == 200:
             filelist = response.json()
             for file in filelist:
-                file_data = file.update()
-                yield RequestFile.get(auth, file, **additional)
+                print(file)
+                yield RequestFile.get(auth, file)
     
     def is_box_key(self, key: str):
         return True if self.get_box(key).status_code == 200 else False
@@ -342,30 +343,44 @@ class RequestFile:
     
     _resources = endp.FILE
     
-    def __init__(self, auth: object, file_data: dict,
-                 **additional):
+    def __init__(self, auth: object, file_data: dict, **additional_data):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = file_data.update(additional)
+        self.data = file_data.update(additional_data)
         self.name = self.data["fileName"]
         self.key = self.data["fileKey"]
         
     def __getitem__(self, item):
         return self.data.get(item, None)
     
+    def __bytes__(self):
+        return self.content(self.auth, self.key)
+    
     @classmethod
     def get(cls, auth: object, file_key: str):
         end_point = cls._resources.GET
         end_point = end_point.format(file_key = file_key)
         response = auth.get(end_point)
-        return response
+        if response.status_code == 200:
+            file_data = response.json()
+            return cls(auth, file_data)
+    
+    @classmethod
+    def list(cls, auth: object, box_key: str):
+        # TODO controllare non va
+        filelist = RequestBox.files(auth, box_key)
+        print("\n\n\n", filelist)
+        for file in filelist:
+            yield cls.get(auth, file)
     
     @classmethod
     def content(cls, auth: object, file_key: str):     
         end_point = cls._resources.CONTENT
         end_point = end_point.format(file_key = file_key)
         response = auth.get(end_point)
-        return response
+        if response.status_code == 200:
+            filedata = BytesIO(response.content)
+            return filedata
     
         
         
