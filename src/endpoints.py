@@ -48,7 +48,7 @@ class BOX(StrEnum):
     
     
     FIELD_NEWVAL = BASE.ROOT + r"/v1/boxes/{box_key}/fields/{field_key}"
-    FILE = BASE.ROOT + r"/v1/boxes/{box_key}/files"
+    FILES = BASE.ROOT + r"/v1/boxes/{box_key}/files"
     
     
     

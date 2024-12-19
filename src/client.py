@@ -338,30 +338,17 @@ class RequestFile:
         # self.name = self.data["name"]
         # self.key = self.data["boxKey"]
     
-    connect = Auth.connect
-    resources = endp.FILE
-    base = endp.BASE.ROOT
-    
-    def __init__(self, auth: object, file_key: str):
-        self.auth = auth
-        self.key = file_key
-        self.data = self.request(self.auth, self.key).json()
-    
     @classmethod
-    def request(cls, auth: object, file_key: str):
-        blocks = [cls.base, cls.resources.GET]
-        input_keys = {"file_key": file_key}
-        
-        end_point = jformat(blocks, **input_keys)
+    def get(cls, auth: object, file_key: str):
+        end_point = cls._resources.GET
+        end_point = end_point.format(file_key = file_key)
         response = auth.get(end_point)
         return response
     
     @classmethod
-    def content(cls, auth: object, file_key: str):        
-        blocks = [cls.base, cls.resources.CONTENT]
-        input_keys = {"file_key": file_key}
-        
-        end_point = jformat(blocks, **input_keys)
+    def content(cls, auth: object, file_key: str):     
+        end_point = cls._resources.CONTENT
+        end_point = end_point.format(file_key = file_key)
         response = auth.get(end_point)
         return response
     
