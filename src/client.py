@@ -92,7 +92,9 @@ class RequestUser:
         self.email = self.data["email"]
         self.key = self.data["key"]
         
-    
+    def __getitem__(self, item):
+        return self.data.get(item, None)
+        
     def __str__(self):
         return f"{self.key}"
     
@@ -130,6 +132,8 @@ class RequestTeam:
         self.name = self.data["name"]
         self.key = self.data["key"]
         
+    def __getitem__(self, item):
+        return self.data.get(item, None)
     
     def __str__(self):
         return f"{self.key}"
@@ -162,6 +166,8 @@ class RequestPipeline:
         self.name = self.data["name"]
         self.key = self.data["key"]
         
+    def __getitem__(self, item):
+        return self.data.get(item, None)
     
     def __str__(self):
         return f"{self.key}"
@@ -199,7 +205,9 @@ class RequestBox:
         self.data = box_data
         self.name = self.data["name"]
         self.key = self.data["boxKey"]
-        
+
+    def __getitem__(self, item):
+        return self.data.get(item, None)
     
     def __str__(self):
         return f"{self.key}"
@@ -266,11 +274,14 @@ class RequestBox:
     
     @classmethod
     def files(cls, auth: object, box_key: str):
-        # TODO
-        RESOURCE = fr"/v1/boxes/{box_key}/files"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
+        end_point = cls._resources.FILES
+        end_point = end_point.format(box_key = box_key)
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            filelist = response.json()
+            for file in filelist:
+                file_data = file.update()
+                yield RequestFile.get(auth, file, **additional)
     
     def is_box_key(self, key: str):
         return True if self.get_box(key).status_code == 200 else False
@@ -331,12 +342,16 @@ class RequestFile:
     
     _resources = endp.FILE
     
-    def __init__(self, auth: object, file_data: dict):
+    def __init__(self, auth: object, file_data: dict,
+                 **additional):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = file_data
-        # self.name = self.data["name"]
-        # self.key = self.data["boxKey"]
+        self.data = file_data.update(additional)
+        self.name = self.data["fileName"]
+        self.key = self.data["fileKey"]
+        
+    def __getitem__(self, item):
+        return self.data.get(item, None)
     
     @classmethod
     def get(cls, auth: object, file_key: str):
