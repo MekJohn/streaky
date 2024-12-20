@@ -86,10 +86,10 @@ class RequestUser:
     
     _resources = endp.USER
     
-    def __init__(self, auth: object, user_data: dict, **additional_data):
+    def __init__(self, auth: object, user_data: dict):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = user_data.update(additional_data)
+        self.data = user_data
         self.email = self.data["email"]
         self.key = self.data["key"]
         
@@ -126,7 +126,7 @@ class RequestTeam:
     
     _resources = endp.TEAM
     
-    def __init__(self, auth: object, team_data: dict, **additional_data):
+    def __init__(self, auth: object, team_data: dict):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
         self.data = team_data.update(additional_data)
@@ -160,10 +160,10 @@ class RequestPipeline:
 
     _resources = endp.PIPELINE
     
-    def __init__(self, auth: object, pipeline_data: dict, **additional_data):
+    def __init__(self, auth: object, pipeline_data: dict):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = pipeline_data.update(additional_data)
+        self.data = pipeline_data
         self.name = self.data["name"]
         self.key = self.data["key"]
         
@@ -200,10 +200,10 @@ class RequestBox:
     
     _resources = endp.BOX
     
-    def __init__(self, auth: object, box_data: dict, **additional_data):
+    def __init__(self, auth: object, box_data: dict):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = box_data.update(additional_data)
+        self.data = box_data
         self.name = self.data["name"]
         self.key = self.data["boxKey"]
 
@@ -245,7 +245,7 @@ class RequestBox:
 
     @classmethod
     def list(cls, auth: object, pipeline_key: str, page: int = None, 
-             stage_key: str = None, limit: int = None):
+             stage_key: str = None, limit: int = 10):
         """
         To limit the response, 'limit' parameter need to be set.
         The 'page' parameter than can be used to move around the response.
@@ -281,8 +281,7 @@ class RequestBox:
         if response.status_code == 200:
             filelist = response.json()
             for file in filelist:
-                print(file)
-                yield RequestFile.get(auth, file)
+                yield file
     
     def is_box_key(self, key: str):
         return True if self.get_box(key).status_code == 200 else False
@@ -339,19 +338,23 @@ class RequestField:
 
 class RequestFile:
     
-    # TODO come pipeline
-    
     _resources = endp.FILE
     
-    def __init__(self, auth: object, file_data: dict, **additional_data):
+    def __init__(self, auth: object, file_data: dict):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = file_data.update(additional_data)
+        self.data = file_data
         self.name = self.data["fileName"]
         self.key = self.data["fileKey"]
         
     def __getitem__(self, item):
         return self.data.get(item, None)
+    
+    def __str__(self):
+        return f"{self.key}"
+    
+    def __repr__(self):
+        return f"<RequestFile '{self.name}'>"
     
     def __bytes__(self):
         return self.content(self.auth, self.key)
@@ -367,14 +370,12 @@ class RequestFile:
     
     @classmethod
     def list(cls, auth: object, box_key: str):
-        # TODO controllare non va
         filelist = RequestBox.files(auth, box_key)
-        print("\n\n\n", filelist)
         for file in filelist:
             yield cls.get(auth, file)
     
     @classmethod
-    def content(cls, auth: object, file_key: str):     
+    def content(cls, auth: object, file_key: str) -> bytes:     
         end_point = cls._resources.CONTENT
         end_point = end_point.format(file_key = file_key)
         response = auth.get(end_point)
