@@ -61,8 +61,8 @@ class THREAD(StrEnum):
 class FIELD(StrEnum):
     
     GET = BASE.ROOT + r"/v1/pipelines/{pipeline_key}/fields/{field_key}"
-    UPDATE_NAME = ""
     LIST = BASE.ROOT + r"/v1/pipelines/{pipeline_key}/fields"
+    UPDATE = BASE.ROOT + r"/v1/boxes/{box_key}/fields/{field_key}"
     
     
 class FILE(StrEnum):

@@ -16,48 +16,10 @@ KEYPATH = r"../key.txt"
   
 
 class Streaky:
-    
-
-    DOCS = r"https://streak.readme.io/reference/get-current-user"
-    ENDP = r"https://api.streak.com/api"
 
     def __init__(self, auth64: bytes) -> object:
-        
         self.auth64: bytes = auth64
-        
-    @property
-    def me(self) -> rqs.models.Response:
-        """
-        Get current user details.
-        (https://streak.readme.io/reference/get-current-user)
-        """
-        RESOURCE = r"/v1/users/me"
-        
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
-        
-    def __getitem__(self, item):
-        return self.get(item)
-    
-    @staticmethod
-    def get_key64_fromfile(key_filepath: str = KEYPATH):
-        with open(key_filepath, "r") as file:
-            key = file.read()
-        encrypted_key = base64.b64encode(key.encode())
-        return encrypted_key
 
-    def get(self, url: str) -> rqs.models.Response:        
-        query = {"authorization": f"Basic {self.auth64.decode()}"}
-        response = rqs.get(url, headers = query)
-        return response
-    
-    def post(self, url, payload: dict = None):
-        query = {"authorization": f"Basic {self.auth64.decode()}",
-                 "accept": "application/json",
-                 "Content-Type": "application/json"}
-        response = rqs.post(url, json = payload, headers = query)
-        return response
 
 
     def get_user(self, user_key: str) -> rqs.models.Response:
@@ -77,33 +39,6 @@ class Streaky:
         return response
 
 
-    def list_pipelines(self) -> object:
-        RESOURCE = r"/v1/pipelines?sortBy=creationTimestamp%20"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
-
-
-    def get_pipeline(self, pipeline_key: str):
-        end_point = self.ENDP + fr"/v1/pipelines/{pipeline_key}"
-        response = self.get(end_point)
-        return response
-
-
-    def get_box(self, box_key: str):
-        end_point = self.ENDP + fr"/v1/boxes/{box_key}"
-        response = self.get(end_point)
-        return response
-    
-    def get_box_by_name(self, box_name: str, stage_key: str = None, pipeline_key: str = None):
-        RESOURCE = r"/v1/search?"
-        end_point = self.ENDP + RESOURCE
-        
-        end_point = end_point if pipeline_key is None else end_point + fr"pipelineKey={pipeline_key}&"
-        end_point = end_point if stage_key is None else end_point + fr"stageKey={stage_key}&"
-        end_point = end_point + fr"name={box_name}"
-        response = self.get(end_point)
-        return response
 
 
     def list_boxes(self, pipeline_key: str, page: int = None, stage_key: str = None, limit: int = None):
@@ -145,39 +80,7 @@ class Streaky:
         end_point = self.ENDP + fr"/v1/pipelines/{pipeline_key}/fields"
         response = self.get(end_point)
         return response
-        
-    
 
-    def is_pipeline_key(self, key: str):
-        return True if self.get_pipeline(key).status_code == 200 else False
-
-    def is_box_key(self, key: str):
-        return True if self.get_box(key).status_code == 200 else False
-    
-    def is_field_key(self, key: str):
-        return True if self.get_box(key).status_code == 200 else False
-    
-    
-    def get_box_files(self, box_key: str):
-        RESOURCE = fr"/v1/boxes/{box_key}/files"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
-    
-    def get_file(self, file_key: str):
-        RESOURCE = fr"/v1/files/{file_key}"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
-    
-    def get_file_content(self, file_key: str):        
-        RESOURCE = fr"/v1/files/{file_key}/contents"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
-    
-        
-        
         
             
         
@@ -209,7 +112,7 @@ class User:
         return cls(found_user)
 
     @staticmethod
-    def list_users(streak: object):
+    def list(streak: object):
         response = streak.get_my_team()
         users = response.json()["results"][0]["members"]
         for user in users:

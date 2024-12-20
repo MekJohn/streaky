@@ -4,7 +4,7 @@ import time as tm
 import pandas as pd
 from io import BytesIO
 
-import endpoints as endp
+import endpoints as enp
 
 # Insert your api key here.
 
@@ -30,7 +30,7 @@ class Auth:
     
     @property
     def is_connected(self):
-        enpoint = endp.USER.ME
+        enpoint = enp.USER.ME
         response = self.get(enpoint)
         return True if response.status_code == 200 else False
     
@@ -84,7 +84,7 @@ class Auth:
     
 class RequestUser:
     
-    _resources = endp.USER
+    _resources = enp.USER
     
     def __init__(self, auth: object, user_data: dict):
         self.timestamp_ns = tm.time_ns()
@@ -124,12 +124,12 @@ class RequestUser:
 
 class RequestTeam:
     
-    _resources = endp.TEAM
+    _resources = enp.TEAM
     
     def __init__(self, auth: object, team_data: dict):
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
-        self.data = team_data.update(additional_data)
+        self.data = team_data
         self.name = self.data["name"]
         self.key = self.data["key"]
         
@@ -158,7 +158,7 @@ class RequestTeam:
 
 class RequestPipeline:    
 
-    _resources = endp.PIPELINE
+    _resources = enp.PIPELINE
     
     def __init__(self, auth: object, pipeline_data: dict):
         self.timestamp_ns = tm.time_ns()
@@ -198,7 +198,7 @@ class RequestPipeline:
 
 class RequestBox:
     
-    _resources = endp.BOX
+    _resources = enp.BOX
     
     def __init__(self, auth: object, box_data: dict):
         self.timestamp_ns = tm.time_ns()
@@ -289,7 +289,7 @@ class RequestBox:
 
 class RequestThread:
     
-    # TODO come pipeline
+    _resource = enp
     
     def list_threads(self, box_key: str):
         end_point = self.ENDP + fr"/v1/boxes/{box_key}/threads"
@@ -305,40 +305,57 @@ class RequestThread:
 
 class RequestField:
     
-    # TODO come pipeline
+    _resources = enp.FIELD
     
-    auth = Auth
-    resources = endp.FIELD
+    def __init__(self, auth: object, field_data: dict):
+        self.timestamp_ns = tm.time_ns()
+        self.auth = auth
+        self.data = field_data
+        self.name = self.data["name"]
+        self.key = self.data["key"]
+        
+    def __getitem__(self, item):
+        return self.data.get(item, None)
     
-    def __init__(self, auth: object, key: str):
-        pass
+    def __str__(self):
+        return f"{self.key}"
     
-            
-    def get_field(self, pipeline_key: str, field_key: str):
-        RESOURCE = fr"/v1/pipelines/{pipeline_key}/fields/{field_key}"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
+    def __repr__(self):
+        return f"<RequestField '{self.name}'>"
     
-    def update_field_value(self, box_key: str, field_key: str, new_value: str):
-        RESOURCE = fr"/v1/boxes/{box_key}/fields/{field_key}"
-        end_point = self.ENDP + RESOURCE
-        response = self.post(end_point, payload = {"value": new_value})
-        return response
+    @classmethod
+    def get(cls, auth: object, pipeline_key: str, field_key: str):
+        end_point = cls._resources.GET
+        end_point = end_point.format(pipeline_key = pipeline_key,
+                                     field_key = field_key)
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            field_data = response.json()
+            return cls(auth, field_data)
     
-    def list_fields(self, pipeline_key: str):
-        end_point = self.ENDP + fr"/v1/pipelines/{pipeline_key}/fields"
-        response = self.get(end_point)
-        return response
-
-    def is_field_key(self, key: str):
-        return True if self.get_box(key).status_code == 200 else False
-
+    @classmethod
+    def update(cls, auth: object, box_key: str, field_key: str, 
+               new_value: str):
+        end_point = cls._resources.UPDATE
+        end_point = end_point.format(box_key = box_key, field_key = field_key)
+        response = auth.post(end_point, payload = {"value": new_value})
+        if response.status_code == 200:
+            return response
+    
+    @classmethod
+    def list(cls, auth: object, pipeline_key: str):
+        end_point = cls._resources.LIST
+        end_point = end_point.format(pipeline_key = pipeline_key)
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            field_list = response.json()
+            for field in field_list:
+                yield cls(auth, field)
 
 
 class RequestFile:
     
-    _resources = endp.FILE
+    _resources = enp.FILE
     
     def __init__(self, auth: object, file_data: dict):
         self.timestamp_ns = tm.time_ns()
@@ -384,19 +401,4 @@ class RequestFile:
             return filedata
     
         
-        
-        
-            
-        
-
-
-
-
-
-
-
-
-
-
-
 
