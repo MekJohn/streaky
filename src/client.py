@@ -337,18 +337,42 @@ class BoxAPI:
 
 class ThreadAPI:
     
-    _resource = enp
+    _resources = enp.THREAD
     
-    def list_threads(self, box_key: str):
-        end_point = self.ENDP + fr"/v1/boxes/{box_key}/threads"
-        response = self.get(end_point)
-        return response
+    def __init__(self, auth: object, thread_data: dict):
+        self.timestamp_ns = tm.time_ns()
+        self.auth = auth
+        self.data = thread_data
+        # self.name = self.data["fileName"]
+        # self.key = self.data["fileKey"]
+        
+    def __getitem__(self, item):
+        return self.data.get(item, None)
+    
+    def __str__(self):
+        return f"{self.key}"
+    
+    def __repr__(self):
+        return f"<ThreadAPI '{self.name}'>"
+    
+    
+    @classmethod
+    def get(cls, auth: object, thread_key: str):
+        end_point = cls._resources.GET
+        end_point = end_point.format(thread_key = thread_key)
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            thread_data = response.json()
+            return cls(auth, thread_data)
 
-
-    def get_thread(self, thread_key: str):
-        end_point = self.ENDP + fr"/v1/threads/{thread_key}"
-        response = self.get(end_point)
-        return response
+    @classmethod
+    def list(cls, auth:object, box_key: str):
+        end_point = cls._resources.LIST
+        end_point = end_point.format(box_key = box_key)
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            thread_data = response.json()
+            yield cls(auth, thread_data)
         
 
 
