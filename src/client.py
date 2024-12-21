@@ -343,8 +343,8 @@ class ThreadAPI:
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
         self.data = thread_data
-        # self.name = self.data["fileName"]
-        # self.key = self.data["fileKey"]
+        self.name = self.data["subject"]
+        self.key = self.data["key"]
         
     def __getitem__(self, item):
         return self.data.get(item, None)
@@ -353,7 +353,10 @@ class ThreadAPI:
         return f"{self.key}"
     
     def __repr__(self):
-        return f"<ThreadAPI '{self.name}'>"
+        subject = self.name
+        if len(subject) > 20:
+            subject = f"{self.name[:8]}...{self.name[-8:]}"
+        return f"<ThreadAPI '{subject}'>"
     
     
     @classmethod
@@ -371,8 +374,9 @@ class ThreadAPI:
         end_point = end_point.format(box_key = box_key)
         response = auth.get(end_point)
         if response.status_code == 200:
-            thread_data = response.json()
-            yield cls(auth, thread_data)
+            threads = response.json()
+            for thread in threads:
+                yield cls(auth, thread)
         
 
 
