@@ -100,7 +100,7 @@ class UserAPI:
         return f"{self.key}"
     
     def __repr__(self):
-        return f"<RequestUser '{self.email}'>"
+        return f"<UserAPI '{self.email}'>"
     
     @classmethod
     def me(cls, auth):
@@ -140,7 +140,7 @@ class TeamAPI:
         return f"{self.key}"
     
     def __repr__(self):
-        return f"<RequestTeam '{self.name}'>"
+        return f"<TeamAPI '{self.name}'>"
     
     @classmethod
     def my(cls, auth):
@@ -174,7 +174,7 @@ class PipelineAPI:
         return f"{self.key}"
     
     def __repr__(self):
-        return f"<RequestPipeline '{self.name}'>"
+        return f"<PipelineAPI '{self.name}'>"
     
     
     @classmethod
@@ -212,7 +212,7 @@ class FieldAPI:
         return f"{self.key}"
     
     def __repr__(self):
-        return f"<RequestField '{self.name}'>"
+        return f"<FieldAPI '{self.name}'>"
     
     @classmethod
     def get(cls, auth: object, pipeline_key: str, field_key: str):
@@ -262,7 +262,7 @@ class BoxAPI:
         return f"{self.key}"
     
     def __repr__(self):
-        return f"<RequestBox '{self.name}'>"
+        return f"<BoxAPI '{self.name}'>"
     
     
     @classmethod
@@ -370,7 +370,7 @@ class FileAPI:
         return f"{self.key}"
     
     def __repr__(self):
-        return f"<RequestFile '{self.name}'>"
+        return f"<FileAPI '{self.name}'>"
     
     def __bytes__(self):
         return self.content(self.auth, self.key)
