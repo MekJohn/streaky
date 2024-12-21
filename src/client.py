@@ -82,7 +82,7 @@ class Auth:
 
     
     
-class RequestUser:
+class UserAPI:
     
     _resources = enp.USER
     
@@ -119,10 +119,10 @@ class RequestUser:
     
     @staticmethod
     def team(auth):
-        return RequestTeam.my(auth)
+        return TeamAPI.my(auth)
         
 
-class RequestTeam:
+class TeamAPI:
     
     _resources = enp.TEAM
     
@@ -156,7 +156,7 @@ class RequestTeam:
 
 
 
-class RequestPipeline:    
+class PipelineAPI:    
 
     _resources = enp.PIPELINE
     
@@ -196,7 +196,7 @@ class RequestPipeline:
 
 
 
-class RequestBox:
+class BoxAPI:
     
     _resources = enp.BOX
     
@@ -287,7 +287,7 @@ class RequestBox:
         return True if self.get_box(key).status_code == 200 else False
     
 
-class RequestThread:
+class ThreadAPI:
     
     _resource = enp
     
@@ -303,7 +303,7 @@ class RequestThread:
         return response
         
 
-class RequestField:
+class FieldAPI:
     
     _resources = enp.FIELD
     
@@ -353,7 +353,7 @@ class RequestField:
                 yield cls(auth, field)
 
 
-class RequestFile:
+class FileAPI:
     
     _resources = enp.FILE
     
@@ -387,9 +387,12 @@ class RequestFile:
     
     @classmethod
     def list(cls, auth: object, box_key: str):
-        filelist = RequestBox.files(auth, box_key)
-        for file in filelist:
-            yield cls.get(auth, file)
+        # TODO
+        # BoxAPI.files return different type of dict of what 
+        # returned by FileAPI.list endpoint. Than for the moment,
+        # the additional data on BoxAPI.files object is omitted
+        for file in BoxAPI.files(auth, box_key):
+            yield cls.get(auth, file["fileKey"])
     
     @classmethod
     def content(cls, auth: object, file_key: str) -> bytes:     
