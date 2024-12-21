@@ -194,6 +194,54 @@ class PipelineAPI:
             pip = response.json()
             return cls(auth, pip)
 
+class FieldAPI:
+    
+    _resources = enp.FIELD
+    
+    def __init__(self, auth: object, field_data: dict):
+        self.timestamp_ns = tm.time_ns()
+        self.auth = auth
+        self.data = field_data
+        self.name = self.data["name"]
+        self.key = self.data["key"]
+        
+    def __getitem__(self, item):
+        return self.data.get(item, None)
+    
+    def __str__(self):
+        return f"{self.key}"
+    
+    def __repr__(self):
+        return f"<RequestField '{self.name}'>"
+    
+    @classmethod
+    def get(cls, auth: object, pipeline_key: str, field_key: str):
+        end_point = cls._resources.GET
+        end_point = end_point.format(pipeline_key = pipeline_key,
+                                     field_key = field_key)
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            field_data = response.json()
+            return cls(auth, field_data)
+    
+    @classmethod
+    def update(cls, auth: object, box_key: str, field_key: str, 
+               new_value: str):
+        end_point = cls._resources.UPDATE
+        end_point = end_point.format(box_key = box_key, field_key = field_key)
+        response = auth.post(end_point, payload = {"value": new_value})
+        if response.status_code == 200:
+            return response
+    
+    @classmethod
+    def list(cls, auth: object, pipeline_key: str):
+        end_point = cls._resources.LIST
+        end_point = end_point.format(pipeline_key = pipeline_key)
+        response = auth.get(end_point)
+        if response.status_code == 200:
+            field_list = response.json()
+            for field in field_list:
+                yield cls(auth, field)
 
 
 class BoxAPI:
@@ -303,55 +351,6 @@ class ThreadAPI:
         return response
         
 
-class FieldAPI:
-    
-    _resources = enp.FIELD
-    
-    def __init__(self, auth: object, field_data: dict):
-        self.timestamp_ns = tm.time_ns()
-        self.auth = auth
-        self.data = field_data
-        self.name = self.data["name"]
-        self.key = self.data["key"]
-        
-    def __getitem__(self, item):
-        return self.data.get(item, None)
-    
-    def __str__(self):
-        return f"{self.key}"
-    
-    def __repr__(self):
-        return f"<RequestField '{self.name}'>"
-    
-    @classmethod
-    def get(cls, auth: object, pipeline_key: str, field_key: str):
-        end_point = cls._resources.GET
-        end_point = end_point.format(pipeline_key = pipeline_key,
-                                     field_key = field_key)
-        response = auth.get(end_point)
-        if response.status_code == 200:
-            field_data = response.json()
-            return cls(auth, field_data)
-    
-    @classmethod
-    def update(cls, auth: object, box_key: str, field_key: str, 
-               new_value: str):
-        end_point = cls._resources.UPDATE
-        end_point = end_point.format(box_key = box_key, field_key = field_key)
-        response = auth.post(end_point, payload = {"value": new_value})
-        if response.status_code == 200:
-            return response
-    
-    @classmethod
-    def list(cls, auth: object, pipeline_key: str):
-        end_point = cls._resources.LIST
-        end_point = end_point.format(pipeline_key = pipeline_key)
-        response = auth.get(end_point)
-        if response.status_code == 200:
-            field_list = response.json()
-            for field in field_list:
-                yield cls(auth, field)
-
 
 class FileAPI:
     
@@ -391,6 +390,7 @@ class FileAPI:
         # BoxAPI.files return different type of dict of what 
         # returned by FileAPI.list endpoint. Than for the moment,
         # the additional data on BoxAPI.files object is omitted
+        # and GET endpoint is called instead of use the first directly
         for file in BoxAPI.files(auth, box_key):
             yield cls.get(auth, file["fileKey"])
     
