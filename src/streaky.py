@@ -148,12 +148,12 @@ class Pipeline:
 
     def __repr__(self):
         return f"<Pipeline '{self.name}'>"        
-                   
     
-    @property
-    def stages(self):
-        return {s["name"]: s for k, s in self._data["stages"].items()}
-
+    def listbox(self):
+        pass
+    
+    def box(self, name: str = None, key: str = None):
+        pass
 
     @classmethod
     def request(cls, auth: object, name: str = None, key: str = None):
@@ -166,6 +166,12 @@ class Pipeline:
             for pip_response in cls.api.list(auth):
                 if pip_response.name.lower() == name.lower():
                     return cls(pip_response)
+        else:
+            return None
+    
+    
+
+    
             
 
 
@@ -179,8 +185,7 @@ class Box:
     
     api = cl.BoxAPI
 
-    def __init__(self, auth: object, pipeline: object, 
-                 name: str = None, key: str = None, source: dict = None) -> object:
+    def __init__(self, auth: object, pipeline: object, name: str = None, key: str = None):
         
         self._auth = auth
         
