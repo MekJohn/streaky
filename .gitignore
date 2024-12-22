@@ -2,3 +2,4 @@
 /dist
 /src/*.egg-info
 *key.txt
+/src/__pycache__

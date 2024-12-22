@@ -65,4 +65,7 @@ class FILE(StrEnum):
     
     GET = BASE.ROOT + r"/v1/files/{file_key}"
     CONTENT = BASE.ROOT + r"/v1/files/{file_key}/contents"
+
+class EVENT(StrEnum):
     
+    NEW_BOX_CREATE = r""

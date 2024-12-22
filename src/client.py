@@ -414,7 +414,7 @@ class FileAPI:
     
     @classmethod
     def list(cls, auth: object, box_key: str):
-        # TODO
+        # BUG TODO
         # BoxAPI.files return different type of dict of what 
         # returned by FileAPI.list endpoint. Than for the moment,
         # the additional data on BoxAPI.files object is omitted

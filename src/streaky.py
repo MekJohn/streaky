@@ -88,6 +88,8 @@ class Streaky:
 
 
 class User:
+    
+    api = cl.UserAPI
 
     def __init__(self, data: dict) -> object:
         
@@ -121,93 +123,53 @@ class User:
 
 class Pipeline:
     
-    API = Streak
+    api = cl.PipelineAPI
 
-    def __init__(self, auth: object, name: str = None, key: str = None, source: dict = None) -> object:
+    def __init__(self, pipeline_response: object):
         
-        self._auth = auth
-        if source is not None:
-            data = [source]
-        elif name is key is source is None:
-            raise ValueError("Pipeline 'name' or 'key' must be specified.")
-        else:
-            data = self._request(self._auth, name = name, key = key)
-        if len(data) == 0:
-            raise ValueError("Pipeline not found")
-        else:
-            self._data = data[0]
-                
-    @property
-    def data(self):
-        return self._data
+        self.response = pipeline_response   
+        self.auth = self.response.auth
+        self.key = self.response.key
+        self.name = self.response.name
         
-    @property
-    def name(self):
-        return self["name"]
-    
-    @property
-    def key(self):
-        return self["pipelineKey"]
-    
-    @property
-    def box_count(self):
-        return self["boxCount"]
-    
-    @property
-    def stages(self):
-        return {s["name"]: s for k, s in self._data["stages"].items()}
-    
-    @property
-    def fields(self):
-        return self["fields"]
-    
-    @property
-    def last_update(self):
-        return self["lastSavedTimestamp"]
-
+        self.stages = self.response.data["stages"]
+        self.fields = self.response.data["fields"]
+        self.last_update = self.response.data["lastSavedTimestamp"]
     
     def __getitem__(self, item: str):
-        return self._data.get(item, None)
+        return self.response.get(item, None)
     
 
     def __len__(self):
-        return self.box_count
+        return self.response.data["boxCount"]
     
 
     def __str__(self):
         return f"{self.name}"
 
     def __repr__(self):
-        return f"<Pipeline '{self.name}'>"
+        return f"<Pipeline '{self.name}'>"        
+                   
     
-    @staticmethod
-    def get_name_from_key(key: str, auth: object):
-        return auth.get_pipeline(key).json()["name"]
-    
-    @staticmethod
-    def get_key_from_name(name: str, auth: object):
-        pipeline_list  = auth.list_pipelines().json()
-        for p in pipeline_list:
-            if p["name"] == name:
-                return p["pipelineKey"]
+    @property
+    def stages(self):
+        return {s["name"]: s for k, s in self._data["stages"].items()}
 
-    @staticmethod
-    def _request(auth: object, name: str = None, key: str = None) -> list:
 
-        if key is not None:
-            pipelines = [auth.get_pipeline(key).json()]
-        elif name is not None:
-            pipelines = auth.list_pipelines().json()
-            pipelines = [pip for pip in pipelines if name == pip["name"]]
-        else:
-            pipelines = auth.list_pipelines().json()
-            
-        return pipelines
-    
     @classmethod
-    def listpipeline(cls, auth: object):
-        for pip in cls._request(auth):
-            yield cls(auth, source = pip)
+    def request(cls, auth: object, name: str = None, key: str = None):
+        
+        if key is not None:
+           pip_response = cls.api.get(auth, key)
+           if pip_response is not None:
+               return cls(pip_response)
+        elif name is not None:
+            for pip_response in cls.api.list(auth):
+                if pip_response.name.lower() == name.lower():
+                    return cls(pip_response)
+            
+
+
     
 
     
@@ -215,6 +177,8 @@ class Pipeline:
 
 
 class Box:
+    
+    api = cl.BoxAPI
 
     def __init__(self, auth: object, pipeline: object, 
                  name: str = None, key: str = None, source: dict = None) -> object:
@@ -333,7 +297,7 @@ class Box:
 
 class Field:
     
-    API = Streak
+    api = cl.FieldAPI
     
     def __init__(self, name: str, pipeline: str, auth: object) -> object:
         
@@ -395,6 +359,8 @@ class Field:
 
 
 class File:
+    
+    api = cl.FileAPI
     
     def __init__(self, file: object):
 
@@ -495,8 +461,6 @@ class File:
 # # aa = Supervisor.update_deal(box)
 
 # ff = File(streak, key ="agxzfm1haWxmb29nYWVyOwsSDE9yZ2FuaXphdGlvbiIYaW5mby5tZWtwaXBpbmdAZ21haWwuY29tDAsSBEZpbGUYgICF6IzD1wsM")
-
-
 
 
 
