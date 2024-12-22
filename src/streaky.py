@@ -6,7 +6,7 @@ import io
 import pypdf as pp
 import re
 
-import api
+import client as cl
 
 # Insert your api key here.
 KEYPATH = r"../key.txt"
@@ -396,10 +396,10 @@ class Field:
 
 class File:
     
-    def __init__(self, auth: object, key: str):
-        
-        self._auth = auth
-        self._data = auth.get_file(key).json()
+    def __init__(self, file: object):
+
+        self._data = file_object
+        self.key = file_object.key
         
     
     def __getitem__(self, item):
@@ -449,8 +449,12 @@ class File:
         pattern = re.compile(r"Signature\s€\s(?P<deal>.*)Impo", re.DOTALL)
         found = float(pattern.search(text).groupdict()["deal"].replace(".", "_").replace(",", "."))
         return found
-        
+
+
+# class InfoParser:
     
+#     @staticmethod
+#     def search(name: str, pipeline: str = None, box: str, )
     
         
 
