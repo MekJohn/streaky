@@ -185,21 +185,19 @@ class Box:
     
     api = cl.BoxAPI
 
-    def __init__(self, auth: object, pipeline: object, name: str = None, key: str = None):
+    def __init__(self, auth: object, box_response: object):
         
         self._auth = auth
         
-        if source is not None:
-            data = [source]
-        elif name is key is source is None:
-            raise ValueError("Box 'name' or 'key' must be specified.")
-        else:
-            data = self._request(self._auth, pipeline, name = name, key = key)
-            
-        if len(data) == 0:
-            raise ValueError("Box not found")
-        else:
-            self._data = data[0]
+        self.response = box_response   
+        self.auth = self.response.auth
+        self.key = self.response.key
+        self.name = self.response.name
+        
+        self.fields = self.response.data["fields"]
+        self.last_update = self.response.data["lastSavedTimestamp"]
+        
+
 
 
     def __getitem__(self, item):
@@ -210,18 +208,7 @@ class Box:
 
     def __repr__(self):
         return f"<Box '{self.name}'>"
-    
-    @property
-    def auth(self):
-        return self._auth
-    
-    @property
-    def name(self):
-        return self["name"]
-    
-    @property
-    def key(self):
-        return self._data["boxKey"]
+
     
     @property
     def linked_box(self):
@@ -253,6 +240,21 @@ class Box:
     
     
     
+    @classmethod
+    def request(cls, auth: object, name: str = None, key: str = None):
+        
+        if key is not None:
+           box_response = cls.api.get(auth, key)
+           if box_response is not None:
+               return cls(box_response)
+        elif name is not None:
+            for box_response in cls.api.list(auth):
+                if box_response.name.lower() == name.lower():
+                    return cls(box_response)
+        else:
+            return None
+    
+    
     @staticmethod
     def _request(auth: object, pipeline: object, name: str = None, key: str = None, ) -> list:
 
@@ -267,36 +269,11 @@ class Box:
         else:
             boxes = auth.list_boxes(pipeline.key).json()            
         return boxes
-    
-    @classmethod
-    def listboxes(cls, auth: object):
-        for bx in cls._request(auth):
-            yield cls(auth, source = bx)
-    
-    # @classmethod
-    # def _request(cls, name_or_key: str, auth: object, pipeline: str = None, stage: str = None) -> list:
-        
-    #     pipeline_key = None if pipeline is None else Pipeline(pipeline, auth).key
-    #     # TODO stage()
-    #     if auth.is_box_key(name_or_key):
-    #         boxes = [auth.get_box(name_or_key).json()]
-    #     else:
-    #         response = auth.get_box_by_name(name_or_key).json()
-    #         result_boxes = response["results"]["boxes"]
-    #         boxes = [b["boxKey"] for b in result_boxes]
-    #         boxes = [auth.get_box(b).json() for b in boxes]
-            
-    #     return boxes[0]
-    
-            
 
 
-    # @staticmethod
-    # def list_boxes(pipeline: str, auth: object):
-    #     pipeline_key = Pipeline(pipeline, auth).key
-    #     boxes = auth.list_boxes(pipeline_key).json()
-    #     for box in boxes:
-    #         yield box
+
+    
+
 
 
 class Field:
