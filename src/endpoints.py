@@ -44,10 +44,6 @@ class BOX(StrEnum):
     _LST_OPT_STAGE = r"&stageKey={stage_key}"
     _LST_OPT_LIMIT = r"&limit={limit}"
     
-    
-    
-    
-    FIELD_NEWVAL = BASE.ROOT + r"/v1/boxes/{box_key}/fields/{field_key}"
     FILES = BASE.ROOT + r"/v1/boxes/{box_key}/files"
     
     
