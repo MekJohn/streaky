@@ -138,7 +138,6 @@ class Pipeline:
     
     def __getitem__(self, item: str):
         return self.response.get(item, None)
-    
 
     def __len__(self):
         return self.response.data["boxCount"]
