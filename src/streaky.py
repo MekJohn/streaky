@@ -1,85 +1,55 @@
 import requests as rqs
-import base64
 import os
 
 import io
-import pypdf as pp
+# import pypdf as pp
 import re
 
 import client as cl
 
-# Insert your api key here.
-KEYPATH = r"../key.txt"
-
-
-
-  
-
-class Streaky:
-
-    def __init__(self, auth64: bytes) -> object:
-        self.auth64: bytes = auth64
-
-
-
-    def get_user(self, user_key: str) -> rqs.models.Response:
-        """
-        Get user details.
-        (https://streak.readme.io/reference/get-user)
-        """
-        RESOURCE = fr"/v1/users/{user_key}"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
-
-    def get_my_team(self) -> rqs.models.Response:
-        RESOURCE = r"/v2/users/me/teams"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
 
 
 
 
-    def list_boxes(self, pipeline_key: str, page: int = None, stage_key: str = None, limit: int = None):
-        RESOURCE = fr"/v1/pipelines/{pipeline_key}/boxes?sortBy=creationTimestamp"
-        end_point = self.ENDP + RESOURCE
+    # def list_boxes(self, pipeline_key: str, page: int = None, stage_key: str = None, limit: int = None):
+    #     RESOURCE = fr"/v1/pipelines/{pipeline_key}/boxes?sortBy=creationTimestamp"
+    #     end_point = self.ENDP + RESOURCE
         
-        end_point = end_point if page is None else end_point + "&page={pages}"
-        end_point = end_point if stage_key is None else end_point + fr"&stageKey={stage_key}"
-        end_point = end_point if limit is None else end_point + fr"&limit={limit}"
-        response = self.get(end_point)
-        return response
+    #     end_point = end_point if page is None else end_point + "&page={pages}"
+    #     end_point = end_point if stage_key is None else end_point + fr"&stageKey={stage_key}"
+    #     end_point = end_point if limit is None else end_point + fr"&limit={limit}"
+    #     response = self.get(end_point)
+    #     return response
 
-    def list_threads(self, box_key: str):
-        end_point = self.ENDP + fr"/v1/boxes/{box_key}/threads"
-        response = self.get(end_point)
-        return response
+    # def list_threads(self, box_key: str):
+    #     end_point = self.ENDP + fr"/v1/boxes/{box_key}/threads"
+    #     response = self.get(end_point)
+    #     return response
 
 
-    def get_thread(self, thread_key: str):
-        end_point = self.ENDP + fr"/v1/threads/{thread_key}"
-        response = self.get(end_point)
-        return response
+    # def get_thread(self, thread_key: str):
+    #     end_point = self.ENDP + fr"/v1/threads/{thread_key}"
+    #     response = self.get(end_point)
+    #     return response
     
-    def get_field(self, pipeline_key: str, field_key: str):
-        RESOURCE = fr"/v1/pipelines/{pipeline_key}/fields/{field_key}"
-        end_point = self.ENDP + RESOURCE
-        response = self.get(end_point)
-        return response
+    # def get_field(self, pipeline_key: str, field_key: str):
+    #     RESOURCE = fr"/v1/pipelines/{pipeline_key}/fields/{field_key}"
+    #     end_point = self.ENDP + RESOURCE
+    #     response = self.get(end_point)
+    #     return response
     
-    def update_field_value(self, box_key: str, field_key: str, new_value: str):
-        RESOURCE = fr"/v1/boxes/{box_key}/fields/{field_key}"
-        end_point = self.ENDP + RESOURCE
-        response = self.post(end_point, payload = {"value": new_value})
-        return response
+    # def update_field_value(self, box_key: str, field_key: str, new_value: str):
+    #     RESOURCE = fr"/v1/boxes/{box_key}/fields/{field_key}"
+    #     end_point = self.ENDP + RESOURCE
+    #     response = self.post(end_point, payload = {"value": new_value})
+    #     return response
         
     
     
-    def list_fields(self, pipeline_key: str):
-        end_point = self.ENDP + fr"/v1/pipelines/{pipeline_key}/fields"
-        response = self.get(end_point)
-        return response
+    # def list_fields(self, pipeline_key: str):
+    #     end_point = self.ENDP + fr"/v1/pipelines/{pipeline_key}/fields"
+    #     response = self.get(end_point)
+    #     return response
 
         
             
@@ -128,6 +98,7 @@ class Pipeline:
     def __init__(self, pipeline_response: object):
         
         self.response = pipeline_response   
+        
         self.auth = self.response.auth
         self.key = self.response.key
         self.name = self.response.name
@@ -135,25 +106,22 @@ class Pipeline:
         self.stages = self.response.data["stages"]
         self.fields = self.response.data["fields"]
         self.last_update = self.response.data["lastSavedTimestamp"]
-    
-    def __getitem__(self, item: str):
-        return self.response.get(item, None)
-
-    def __len__(self):
-        return self.response.data["boxCount"]
-    
-
+        
     def __str__(self):
         return f"{self.name}"
 
     def __repr__(self):
-        return f"<Pipeline '{self.name}'>"        
+        return f"<Pipeline '{self.name}'>"
     
-    def listbox(self):
+    def __getitem__(self, item: str):
+        return self.response.get(item, None)
+    
+    def __len__(self):
+        return self.response.data["boxCount"]
+           
+    def __contains__(self, box: str | object):
         pass
     
-    def box(self, name: str = None, key: str = None):
-        pass
 
     @classmethod
     def request(cls, auth: object, name: str = None, key: str = None):
@@ -171,105 +139,61 @@ class Pipeline:
     
     
 
-    
-            
-
-
-    
-
-    
-
-
-
 class Box:
     
     api = cl.BoxAPI
 
-    def __init__(self, auth: object, box_response: object):
-        
-        self._auth = auth
+    def __init__(self, box_response: object, pipeline: object = None):
         
         self.response = box_response   
+        
         self.auth = self.response.auth
         self.key = self.response.key
         self.name = self.response.name
         
-        self.fields = self.response.data["fields"]
-        self.last_update = self.response.data["lastSavedTimestamp"]
         
+        # if self in pipeline:
+        #     self.pipeline = pipeline
+        # else:
+        #     box_pipkey = self.response.data["pipelineKey"]
+        #     self.pipeline = Pipeline.request(self.auth, key = box_pipkey)
+            
+        self.stage = self.response.data["stageKey"]
+        self.fields = self.response.data["fields"]
+        
+        self.notes = self.response.data["notes"]
+        self.last_update = self.response.data["lastSavedTimestamp"]
 
-
-
-    def __getitem__(self, item):
-        return self._data.get(item, None)
 
     def __str__(self):
-        return f"{self.name}"
+        return f"{self.key}"
 
     def __repr__(self):
         return f"<Box '{self.name}'>"
-
     
-    @property
-    def linked_box(self):
+    
+    def __getitem__(self, item):
+        return self._data.get(item, None)
+    
+    def __contains__(self, other: str | object):
         pass
-    
-    @property
-    def pipeline(self):
-        pipeline_key = box._data["pipelineKey"]
-        data = self.auth.get_pipeline(pipeline_key).json()
-        return Pipeline(data["data"])
-    
-    @property
-    def fields(self):
-        return self["fields"]
-    
-    @property
-    def files(self):
-        return self._auth.get_box_files(self.key).json()
-    
-    
-    @property
-    def keys(self):
-        return {"boxKey": self["boxKey"], 
-                "stageKey": self["stageKey"], 
-                "pipelineKey": self["pipelineKey"],
-                "linkedBoxKeys": self["linkedBoxKeys"],
-                "followerKeys": self["followerKeys"]
-                }
-    
     
     
     @classmethod
-    def request(cls, auth: object, name: str = None, key: str = None):
+    def request(cls, pipeline: object, name: str = None, key: str = None):
         
         if key is not None:
-           box_response = cls.api.get(auth, key)
-           if box_response is not None:
-               return cls(box_response)
+           box_rep = cls.api.get(pipeline.auth, key)
+           if box_rep is not None:
+               return cls(box_rep, pipeline = pipeline)
         elif name is not None:
-            for box_response in cls.api.list(auth):
-                if box_response.name.lower() == name.lower():
-                    return cls(box_response)
+            for box_rep in cls.api.get_by_name(pipeline.auth, name,
+                                               pipeline_key = pipeline.key):
+                if box_rep.name.lower() == name.lower():
+                    return cls(box_rep, pipeline = pipeline)
         else:
             return None
     
-    
-    @staticmethod
-    def _request(auth: object, pipeline: object, name: str = None, key: str = None, ) -> list:
-
-        if name is key is None:
-            raise ValueError("A value for 'name' or 'key' must be specified.")
-        elif key is not None:            
-            boxes = [auth.get_box(key).json()]
-        elif name is not None:
-            boxes_result = auth.get_box_by_name(name, pipeline_key = pipeline.key).json()["results"]["boxes"]            
-            boxes_keys = [bx["boxKey"] for bx in boxes_result]
-            boxes = [auth.get_box(k).json() for k in boxes_keys]
-        else:
-            boxes = auth.list_boxes(pipeline.key).json()            
-        return boxes
-
 
 
     
@@ -280,13 +204,10 @@ class Field:
     
     api = cl.FieldAPI
     
-    def __init__(self, name: str, pipeline: str, auth: object) -> object:
+    def __init__(self, field_response: object, box: object = None):
+        pass
         
-        self._auth = auth
-        self._data = self._request(name, pipeline, self._auth)
-        if self._data is None:
-            raise ValueError("Field not Found.")
-    
+
     def __getitem__(self, item):
         return self._data.get(item, None)
     
@@ -295,48 +216,25 @@ class Field:
     
     def __repr__(self):
         return f"<Field '{self.name}'>"
+
+
+
+    @classmethod
+    def request(cls, pipeline: object, name: str = None, key: str = None):
+        
+        if key is not None:
+           field_rep = cls.api.get(pipeline.auth, key)
+           if field_rep is not None:
+               return cls(field_rep)
+        elif name is not None:
+            for field_rep in cls.api.list(pipeline.auth, 
+                                          pipeline.key, limit=None):
+                if field_rep.name.lower() == name.lower():
+                    return cls(field_rep)
+        else:
+            return None
     
-    @property
-    def name(self):
-        return self["name"]
-    
-    @property
-    def key(self):
-        return self["key"]
-    
-    @property
-    def types(self):
-        return self["type"]
-    
-    
-    
-    @staticmethod
-    def _request(name: str, pipeline: str, auth: object):
-        for p in auth.list_pipelines().json():
-            if p["name"] == pipeline:
-                for f in p["fields"]:
-                    if f["name"] == name:
-                        return f
-    
-    
-    @staticmethod
-    def list_fields(auth: object, pipeline: str = None):
-        for p in auth.list_pipelines().json():
-            if p["name"] == pipeline or pipeline is None:
-                for f in p["fields"]:
-                    yield f
-                    
-    
-    @staticmethod
-    def get_name_from_key(key: str, auth: object):
-        return auth.get_field(key).json()["name"]
-    
-    @staticmethod
-    def get_key_from_name(name: str, auth: object):
-        pipeline_list  = auth.list_pipelines().json()
-        for p in pipeline_list:
-            if p["name"] == name:
-                return p["Key"]
+
 
 
 class File:

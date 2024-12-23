@@ -23,7 +23,7 @@ class Auth:
         return f"{self.key}"
     
     def __repr__(self):
-        return f"<Auth '{self.key}'>"
+        return f"<Auth '{self.key.decode()}'>"
     
     def __getitem__(self, item):
         return self._log[item] if item < len(self._log) else None
@@ -252,8 +252,10 @@ class BoxAPI:
         self.timestamp_ns = tm.time_ns()
         self.auth = auth
         self.data = box_data
+        
         self.name = self.data["name"]
         self.key = self.data["boxKey"]
+        
 
     def __getitem__(self, item):
         return self.data.get(item, None)
@@ -430,6 +432,4 @@ class FileAPI:
         if response.status_code == 200:
             filedata = BytesIO(response.content)
             return filedata
-    
-        
 
