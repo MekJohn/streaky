@@ -1,61 +1,10 @@
-import requests as rqs
+import pypdf as pp
 import os
-
 import io
-# import pypdf as pp
 import re
 
 import client as cl
-
-
-
-
-
-    # def list_boxes(self, pipeline_key: str, page: int = None, stage_key: str = None, limit: int = None):
-    #     RESOURCE = fr"/v1/pipelines/{pipeline_key}/boxes?sortBy=creationTimestamp"
-    #     end_point = self.ENDP + RESOURCE
-        
-    #     end_point = end_point if page is None else end_point + "&page={pages}"
-    #     end_point = end_point if stage_key is None else end_point + fr"&stageKey={stage_key}"
-    #     end_point = end_point if limit is None else end_point + fr"&limit={limit}"
-    #     response = self.get(end_point)
-    #     return response
-
-    # def list_threads(self, box_key: str):
-    #     end_point = self.ENDP + fr"/v1/boxes/{box_key}/threads"
-    #     response = self.get(end_point)
-    #     return response
-
-
-    # def get_thread(self, thread_key: str):
-    #     end_point = self.ENDP + fr"/v1/threads/{thread_key}"
-    #     response = self.get(end_point)
-    #     return response
     
-    # def get_field(self, pipeline_key: str, field_key: str):
-    #     RESOURCE = fr"/v1/pipelines/{pipeline_key}/fields/{field_key}"
-    #     end_point = self.ENDP + RESOURCE
-    #     response = self.get(end_point)
-    #     return response
-    
-    # def update_field_value(self, box_key: str, field_key: str, new_value: str):
-    #     RESOURCE = fr"/v1/boxes/{box_key}/fields/{field_key}"
-    #     end_point = self.ENDP + RESOURCE
-    #     response = self.post(end_point, payload = {"value": new_value})
-    #     return response
-        
-    
-    
-    # def list_fields(self, pipeline_key: str):
-    #     end_point = self.ENDP + fr"/v1/pipelines/{pipeline_key}/fields"
-    #     response = self.get(end_point)
-    #     return response
-
-        
-            
-        
-
-
 
 class User:
     
@@ -150,13 +99,6 @@ class Box:
         self.auth = self.response.auth
         self.key = self.response.key
         self.name = self.response.name
-        
-        
-        # if self in pipeline:
-        #     self.pipeline = pipeline
-        # else:
-        #     box_pipkey = self.response.data["pipelineKey"]
-        #     self.pipeline = Pipeline.request(self.auth, key = box_pipkey)
             
         self.stage = self.response.data["stageKey"]
         self.fields = self.response.data["fields"]
@@ -285,16 +227,28 @@ class File:
         content = io.BytesIO(self._auth.get_file_content(self.key).content)
         return content
     
-    @property
-    def offer_price(self):
         
-        file = self.content
-        document = pp.PdfReader(file)
-        text = document.pages[0].extract_text()
-        pattern = re.compile(r"Signature\s€\s(?P<deal>.*)Impo", re.DOTALL)
-        found = float(pattern.search(text).groupdict()["deal"].replace(".", "_").replace(",", "."))
-        return found
+        
 
+
+class Automate:
+    
+    @staticmethod
+    def last_price(box: object):
+        
+        REGEX = r"Signature\s€\s(?P<deal>.*)Impo"
+        
+        for file in box.files:
+            document = pp.PdfReader(file.content)
+            text = document.pages[0].extract_text()
+            pattern = re.compile(REGEX, re.DOTALL)
+            result = pattern.search(text).groupdict()["deal"]
+            if result is not None:
+                value = result.groupdict().get("deal", "")
+                cleaned = result.replace(".", "_").replace(",", ".")
+                value = float(cleaned_result)
+        return value
+        
 
 # class InfoParser:
     
