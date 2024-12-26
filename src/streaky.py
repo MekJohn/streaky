@@ -110,7 +110,7 @@ class Box:
         self.meetings = None
 
         # Other
-        self.notes = self.response.data["notes"]
+        # self.notes = self.response.data["notes"]
         self.last_update = self.response.data["lastSavedTimestamp"]
 
 
@@ -121,10 +121,10 @@ class Box:
     def __repr__(self):
         return f"<Box '{self.name}'>"
 
-
+    @property
     def files(self):
-        for file in self.response.files:
-            yield file
+        for file in self.api.files(self.auth, self.key):
+            yield File(file)
 
     @classmethod
     def request(cls, pipeline: object, name: str = None, key: str = None):
@@ -189,10 +189,13 @@ class File:
 
     api = cl.FileAPI
 
-    def __init__(self, file: object):
+    def __init__(self, response: object):
 
-        self._data = file
-        self.key = file.key
+        self.response = response
+
+        self.auth = self.response.auth
+        self.key = self.response.key
+        self.name = self.response.name
 
 
     def __getitem__(self, item):
@@ -204,13 +207,6 @@ class File:
     def __repr__(self):
         return f"<File '{self.name}'>"
 
-    @property
-    def key(self):
-        return self["fileKey"]
-
-    @property
-    def name(self):
-        return self["fileName"]
 
     @property
     def stem(self):
@@ -230,7 +226,7 @@ class File:
 
     @property
     def content(self):
-        content = io.BytesIO(self._auth.get_file_content(self.key).content)
+        content = self.api.content(self.auth, self.key)
         return content
 
 
@@ -242,30 +238,41 @@ class Automa:
     def __init__(self, keyfile: str | object) -> object:
         self.auth = cl.Auth.connect(keyfile)
 
+    @property
+    def log(self):
+        return self.auth.log
 
+    def pipeline(self, pipeline_name: str):
+        return Pipeline.request(self.auth, name = pipeline_name)
 
+    def box(self, pipeline_name: str, box_name: str):
+        pipeline = self.pipeline(pipeline_name)
+        return Box.request(pipeline, name = box_name)
 
 
     @staticmethod
-    def prices(box: object) -> dict:
+    def prices(box: object, pattern: object = None) -> dict:
 
         REGEX = r"Signature\s€\s(?P<deal>.*)Impo"
+        pattern = re.compile(REGEX, re.DOTALL) if pattern is None else pattern
 
         prices = dict()
         for file in box.files:
-            if file.ext == "pdf":
+            if file.ext.lower() == ".pdf":
                 try:
+                    print(f"Loading file '{file.name}':")
                     document = pp.PdfReader(file.content)
+                    print(" - reading page")
                     text = document.pages[0].extract_text()
-                    pattern = re.compile(REGEX, re.DOTALL)
-                    result = pattern.search(text).groupdict()["deal"]
+                    result = pattern.search(text)
                     if result is not None:
                         value = result.groupdict().get("deal", "")
-                        cleaned = result.replace(".", "_").replace(",", ".")
+                        cleaned = value.replace(".", "_").replace(",", ".")
                         value = float(cleaned)
+                        print(" - updating result")
                         prices.update({file.name: value})
                 except Exception as err:
-                    print(err)
+                    print(f" - error: '{err}'")
         return prices
 
 
