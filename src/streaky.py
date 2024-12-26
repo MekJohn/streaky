@@ -1,4 +1,5 @@
 import pypdf as pp
+import pandas as pd
 import os
 import io
 import re
@@ -150,10 +151,6 @@ class Field:
         if response is None:
             response = self.request()
 
-
-    def __getitem__(self, item):
-        return self._data.get(item, None)
-
     def __str__(self):
         return f"{self.name}"
 
@@ -199,7 +196,7 @@ class File:
 
 
     def __getitem__(self, item):
-        return self._data.get(item, None)
+        return self.response.data.get(item, None)
 
     def __str__(self):
         return f"{self.name}"
@@ -218,7 +215,7 @@ class File:
 
     @property
     def last_update(self):
-        return self["lastUpdatedTimestamp"]
+        return self["lastSavedTimestamp"]
 
     @property
     def size(self):
@@ -255,21 +252,22 @@ class Automa:
         REGEX = r"Signature\s€\s(?P<deal>.*)Impo"
         pattern = re.compile(REGEX, re.DOTALL) if pattern is None else pattern
 
-        prices = dict()
+        prices = {"Key": [], "Name": [], "Time": [], "Price": []}
         for file in box.files:
             if file.ext.lower() == ".pdf":
                 try:
                     print(f"Loading file '{file.name}':")
                     document = pp.PdfReader(file.content)
-                    print(" - reading page")
                     text = document.pages[0].extract_text()
                     result = pattern.search(text)
                     if result is not None:
                         value = result.groupdict().get("deal", "")
                         cleaned = value.replace(".", "_").replace(",", ".")
                         value = float(cleaned)
-                        print(" - updating result\n")
-                        prices.update({file.name: value})
+                        print(" - updating result")
+                        prices["FileObJ"].append(file)
+                        prices["Time"].append(file.last_update)
+                        prices["Price"].append(value)
                 except Exception as err:
                     print(f" - error: '{err}'")
         return prices
@@ -299,21 +297,6 @@ class Automa:
 #             response = box.auth.update_field_value(box.key, field_key, str(found))
 
 #             return response
-
-
-
-
-
-# key64 = Streak.get_key64_fromfile()
-# streak = Streak.connect()
-
-# pip = Pipeline(streak, name = "OFFERTE")
-# box = Box(streak, pip, name = "0896")
-
-# # aa = Supervisor.update_deal(box)
-
-# ff = File(streak, key ="agxzfm1haWxmb29nYWVyOwsSDE9yZ2FuaXphdGlvbiIYaW5mby5tZWtwaXBpbmdAZ21haWwuY29tDAsSBEZpbGUYgICF6IzD1wsM")
-
 
 
 
