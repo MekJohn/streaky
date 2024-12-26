@@ -249,7 +249,6 @@ class Automa:
         pipeline = self.pipeline(pipeline_name)
         return Box.request(pipeline, name = box_name)
 
-
     @staticmethod
     def prices(box: object, pattern: object = None) -> dict:
 
@@ -269,7 +268,7 @@ class Automa:
                         value = result.groupdict().get("deal", "")
                         cleaned = value.replace(".", "_").replace(",", ".")
                         value = float(cleaned)
-                        print(" - updating result")
+                        print(" - updating result\n")
                         prices.update({file.name: value})
                 except Exception as err:
                     print(f" - error: '{err}'")
