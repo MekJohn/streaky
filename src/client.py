@@ -331,7 +331,8 @@ class BoxAPI:
         if response.status_code == 200:
             filelist = response.json()
             for file in filelist:
-                yield file
+                # BUG TODO -- Endpoint
+                yield FileAPI.get(auth, file["fileKey"])
     
     def is_box_key(self, key: str):
         return True if self.get_box(key).status_code == 200 else False
@@ -416,8 +417,8 @@ class FileAPI:
     
     @classmethod
     def list(cls, auth: object, box_key: str):
-        # BUG TODO
-        # BoxAPI.files return different type of dict of what 
+        # BUG TODO -- Endpoint
+        # BoxAPI.files return different type of dict respect to what 
         # returned by FileAPI.list endpoint. Than for the moment,
         # the additional data on BoxAPI.files object is omitted
         # and GET endpoint is called instead of use the first directly

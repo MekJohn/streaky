@@ -120,6 +120,9 @@ class Box:
     def __contains__(self, other: str | object):
         pass
     
+    def files(self):
+        for file in self.response.files:
+            yield file
     
     @classmethod
     def request(cls, pipeline: object, name: str = None, key: str = None):
@@ -136,11 +139,6 @@ class Box:
         else:
             return None
     
-
-
-    
-
-
 
 class Field:
     
@@ -231,10 +229,14 @@ class File:
         
 
 
-class Automate:
+class Automa:
     
     @staticmethod
-    def last_price(box: object):
+    def connect(keyfile: str | object) -> object:
+        return cl.Auth.connect(keyfile)        
+    
+    @staticmethod
+    def last_price(box: object) -> float:
         
         REGEX = r"Signature\s€\s(?P<deal>.*)Impo"
         
@@ -246,7 +248,7 @@ class Automate:
             if result is not None:
                 value = result.groupdict().get("deal", "")
                 cleaned = result.replace(".", "_").replace(",", ".")
-                value = float(cleaned_result)
+                value = float(cleaned)
         return value
         
 
