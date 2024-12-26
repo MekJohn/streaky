@@ -178,6 +178,7 @@ class Field:
             return None
 
     def update(self, value):
+        pass
 
 
 
@@ -190,8 +191,8 @@ class File:
 
     def __init__(self, file: object):
 
-        self._data = file_object
-        self.key = file_object.key
+        self._data = file
+        self.key = file.key
 
 
     def __getitem__(self, item):
@@ -238,9 +239,12 @@ class File:
 
 class Automa:
 
-    @staticmethod
-    def connect(keyfile: str | object) -> object:
-        return cl.Auth.connect(keyfile)
+    def __init__(self, keyfile: str | object) -> object:
+        self.auth = cl.Auth.connect(keyfile)
+
+
+
+
 
     @staticmethod
     def prices(box: object) -> dict:

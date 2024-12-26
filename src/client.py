@@ -244,7 +244,7 @@ class FieldAPI:
                 yield cls(auth, field)
 
     @classmethod
-    def listall(cls, auth) -> list[object]:
+    def all(cls, auth) -> list[object]:
         fields = dict()
         for pip in PipelineAPI.list(auth):
             fields.update({pip.key: pip["fields"]})
