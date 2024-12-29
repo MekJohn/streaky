@@ -252,7 +252,7 @@ class Automa:
         REGEX = r"Signature\s€\s(?P<deal>.*)Impo"
         pattern = re.compile(REGEX, re.DOTALL) if pattern is None else pattern
 
-        prices = {"Key": [], "Name": [], "Time": [], "Price": []}
+        data = {"Filename": [], "Time": [], "Price": []}
         for file in box.files:
             if file.ext.lower() == ".pdf":
                 try:
@@ -262,15 +262,16 @@ class Automa:
                     result = pattern.search(text)
                     if result is not None:
                         value = result.groupdict().get("deal", "")
-                        cleaned = value.replace(".", "_").replace(",", ".")
-                        value = float(cleaned)
-                        print(" - updating result")
-                        prices["FileObJ"].append(file)
-                        prices["Time"].append(file.last_update)
-                        prices["Price"].append(value)
+                        value = value.replace(".", "_").replace(",", ".")
+                        value = float(value)
+                        print(" - getting data..")
+                        data["Filename"].append(file.name)
+                        data["Time"].append(file.last_update)
+                        data["Price"].append(value)
                 except Exception as err:
                     print(f" - error: '{err}'")
-        return prices
+        price_table = pd.DataFrame(data)
+        return price_table
 
 
 

@@ -3,6 +3,7 @@ import base64
 import time as tm
 import pandas as pd
 from io import BytesIO
+import asyncio
 
 import endpoints as enp
 
