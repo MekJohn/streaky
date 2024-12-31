@@ -24,14 +24,17 @@ class Auth:
     def __repr__(self):
         return f"<Auth '{self.key.decode()}'>"
 
-    def __getitem__(self, item):
-        return self._log[item] if item < len(self._log) else None
 
     @property
-    def is_connected(self):
-        enpoint = enp.USER.ME
-        response = self.get(enpoint)
-        return True if response.status_code == 200 else False
+    def client(self):
+
+        authorization_key = f"Basic {self.key.decode()}"
+        data = {"authorization": authorization_key,
+                "accept": "application/json",
+                "Content-Type": "application/json"}
+
+        return hx.AsyncClient(headers = data)
+
 
     @property
     def log(self):
@@ -54,28 +57,25 @@ class Auth:
         self._log.append(data)
 
 
-    def get(self, url: str) -> object:
-        query = {"authorization": f"Basic {self.key.decode()}",
-                 "accept": "application/json",
-                 "Content-Type": "application/json"}
 
-        response = req.get(url, headers = query)
+    async def _get_task(self, client, url, timeout = None):
+        response = await client.get(url, timeout = timeout)
         self._logger(tm.time_ns(), "GET", url, response)
         return response
 
-    async def get_concurrent(*tasks: object):
-        query = {"authorization": f"Basic {self.key.decode()}",
-                 "accept": "application/json",
-                 "Content-Type": "application/json"}
 
-        async with hx.
+    async def get(self, *urls: str, timeout = None) -> object:
 
-        response = hx.get(url, headers = query)
-        self._logger(tm.time_ns(), "GET", url, response)
-        return response
+        async with self.client as client:
+            tasks = [self._get_task(client, url, timeout = timeout)
+                     for url in urls]
+
+            responses = await asyncio.gather(*tasks)
+            return responses
 
 
     def post(self, url, payload: dict = None) -> object:
+        # TODO async implementation
         query = {"authorization": f"Basic {self.key.decode()}",
                  "accept": "application/json",
                  "Content-Type": "application/json"}
@@ -193,9 +193,14 @@ class PipelineAPI:
     @classmethod
     def list(cls, auth: object) -> object:
         end_point = cls._resources.LIST
-        response = auth.get(end_point)
-        if response.status_code == 200:
-            for pip in response.json():
+
+        request_coru = auth.get(end_point)
+        loop = asyncio.get_event_loop()
+        result = loop.create_task(request_coru)
+
+        if result[0].status_code == 200:
+            data = result[0].json()
+            for pip in data:
                 yield cls(auth, pip)
 
     @classmethod
@@ -456,4 +461,17 @@ class FileAPI:
         if response.status_code == 200:
             filedata = BytesIO(response.content)
             return filedata
+
+
+tempo = tm.time()
+
+auth = Auth.connect(r"..\key.txt")
+endpoint = enp.PIPELINE.LIST
+loop = asyncio.get_event_loop()
+result = loop.run_until_complete(auth.get(endpoint))
+
+tempo = tm.time() - tempo
+print(tempo, "s")
+
+
 

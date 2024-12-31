@@ -303,6 +303,8 @@ class Automa:
 
 
 
+automa = Automa.pipeline("offerte")
+
 
 
 
