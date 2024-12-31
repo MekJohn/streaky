@@ -1,4 +1,6 @@
 import requests as req
+import httpx as hx
+
 import base64
 import time as tm
 import pandas as pd
@@ -10,10 +12,6 @@ import endpoints as enp
 # Insert your api key here.
 
 class Auth:
-
-
-    DOCS = r"https://streak.readme.io/reference/get-current-user"
-    ENDP = r"https://api.streak.com/api"
 
     def __init__(self, auth64: bytes) -> object:
         self._auth64: bytes = auth64
@@ -56,18 +54,32 @@ class Auth:
         self._log.append(data)
 
 
-    def get(self, url: str) -> req.models.Response:
+    def get(self, url: str) -> object:
         query = {"authorization": f"Basic {self.key.decode()}",
                  "accept": "application/json",
                  "Content-Type": "application/json"}
+
         response = req.get(url, headers = query)
         self._logger(tm.time_ns(), "GET", url, response)
         return response
 
-    def post(self, url, payload: dict = None):
+    async def get_concurrent(*tasks: object):
         query = {"authorization": f"Basic {self.key.decode()}",
                  "accept": "application/json",
                  "Content-Type": "application/json"}
+
+        async with hx.
+
+        response = hx.get(url, headers = query)
+        self._logger(tm.time_ns(), "GET", url, response)
+        return response
+
+
+    def post(self, url, payload: dict = None) -> object:
+        query = {"authorization": f"Basic {self.key.decode()}",
+                 "accept": "application/json",
+                 "Content-Type": "application/json"}
+
         response = req.post(url, headers = query, json = payload)
         self._logger(tm.time_ns(), "POST", url, response)
         return response

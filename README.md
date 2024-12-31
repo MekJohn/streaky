@@ -1,6 +1,6 @@
 # STREAKY
 Unofficial and completely amatorial api client to get and set data from your StreakÂ©.
-See more on the [StreakÂ© site](https://www.streak.com/) and [StreakÂ© api](https://streak.readme.io/docs/overview).
+See more on the [Streak© site](https://www.streak.com/) and [Streak© api](https://streak.readme.io/docs/overview).
 
 
 ## Installation
