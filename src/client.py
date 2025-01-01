@@ -7,14 +7,20 @@ import pandas as pd
 from io import BytesIO
 import asyncio
 
+# local libraries
 import endpoints as enp
 
-# Insert your api key here.
 
-class Client:
 
-    def __init__(self, auth64: bytes) -> object:
-        self._auth64: bytes = auth64
+class Client(hx.AsyncClient):
+
+    def __init__(self, auth_key_b64: bytes, header: dict = None) -> object:
+
+        super().__init__(header = header)
+
+        self._auth_key_b64: bytes = auth_key_b64
+        self._add_auth_key_to_header()
+
         self._log = [(tm.time_ns(), "START", "", None)]
 
 
@@ -25,15 +31,23 @@ class Client:
         return f"<Auth '{self.key.decode()}'>"
 
 
-    @property
-    def client(self):
-
-        authorization_key = f"Basic {self.key.decode()}"
-        data = {"authorization": authorization_key,
-                "accept": "application/json",
+    @classmethod
+    def _DEFAULT_GET_HEADER(cls):
+        data = {"accept": "application/json",
                 "Content-Type": "application/json"}
+        return data
 
-        return hx.AsyncClient(headers = data)
+    @classmethod
+    def _DEFAULT_POST_HEADER(cls):
+        data = {"accept": "application/json",
+                "Content-Type": "application/json"}
+        return data
+
+    def _add_auth_key_to_header(self):
+        key = self.key.decode()
+        header_item = {"authorization_key": f"Basic {key}"}
+        self.headers.update(header_item)
+        return True
 
 
     def _logger(self, *data):
@@ -46,20 +60,15 @@ class Client:
         return table
 
 
-
     @property
     def key(self):
-        return self._auth64
+        return self._auth_key_b64
 
 
     @classmethod
     def connect(cls, key_filepath: str = ""):
         key64 = cls._from_file(key_filepath)
         return cls(key64)
-
-
-
-
 
 
     async def _get_task(self, client: object, url: str, timeout = None):
@@ -87,7 +96,7 @@ class Client:
         return response
 
 
-    async def _get_async(self, *urls: str, timeout = None) -> object:
+    async def _gather(self, *urls: str, timeout = None) -> object:
 
         async with self.client as client:
             tasks = [self._get_task(client, url, timeout = timeout)
@@ -96,15 +105,16 @@ class Client:
             responses = await asyncio.gather(*tasks)
             return responses
 
-    @classmethod
-    def get(cls, *urls: str, timeout = None) -> list:
 
-        auth = cls.connect(r"key.txt")
-        endpoint = enp.PIPELINE.LIST
+    def get(self, *urls: str, timeout = None) -> list:
+
+        requests = self._gather(*urls, timeout = timeout)
         loop = asyncio.get_event_loop()
-        result = loop.run_until_complete(auth._get_async(endpoint))
+        result = loop.run_until_complete(requests)
 
-        return result[0]
+        return result
+
+
 
 
     def post(self, url, payload: dict = None) -> object:
@@ -116,6 +126,15 @@ class Client:
         response = req.post(url, headers = query, json = payload)
         self._logger(tm.time_ns(), "POST", url, response)
         return response
+
+        requests = self._post_async(*urls, timeout = timeout)
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(requests)
+
+        return result
+
+
+
 
     @staticmethod
     def _from_file(key_filepath: str = "") -> bytes:
@@ -496,8 +515,17 @@ class FileAPI:
             return filedata
 
 
+time1 = tm.time()
+res = Client.connect(r"key.txt").get(enp.PIPELINE.LIST)
+time1 = tm.time() - time1
 
-res = Auth.get()
-print(res[0])
+time2 = tm.time()
+res = Client.connect(r"key.txt").get(enp.PIPELINE.LIST, enp.PIPELINE.LIST,
+                                     enp.PIPELINE.LIST, enp.PIPELINE.LIST,
+                                     enp.PIPELINE.LIST, enp.PIPELINE.LIST,
+                                     enp.PIPELINE.LIST, enp.PIPELINE.LIST)
+time2 = tm.time() - time2
+
+print(time1, time2)
 
 
