@@ -12,6 +12,34 @@ import endpoints as enp
 
 
 
+class Request:
+
+    GET = "GET"
+    POST = "POST"
+    PUT = "PUT"
+    DELETE = "DELETE"
+
+
+    def __init__(self, method: str, url, header: dict, body: dict = None):
+        self.method = method if method in self.METHODS() else "GET"
+        self.url = self.URL(url) if not isinstance(url, self.URL) else url
+        self.header = self.Headers(header) if not isinstance(url, self.Headers) else header
+        self.body = dict() if body is None else body
+
+    @staticmethod
+    def Header(*args, **kargs):
+        return hx.Headers(*args, **kargs)
+
+    @staticmethod
+    def Url(*args, **kargs):
+        return hx.URL(*args, **kargs)
+
+    @property
+    @classmethod
+    def METHODS(cls):
+        return ["GET", "POST", "PUT", "DELETE"]
+
+
 class Client:
 
     def __init__(self, auth_key_b64: bytes) -> object:
@@ -97,7 +125,7 @@ class Client:
         return response
 
 
-    async def _post_task(self, client: object, url: str, payload: dict = None,
+    async def _post_task(self, client: object, url: str, json: dict = None,
                         timeout = None):
         """
         DESCRIPTION:

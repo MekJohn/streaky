@@ -1,71 +1,100 @@
-from httpx import url as url
+from httpx import URL
 
+# TODO
+class BASE(URL):
 
-class BASE:
+    def __init__(self):
+        super().__init__(r"https://api.streak.com")
+        self.address = str(self)
 
-    ROOT = url(r"https://api.streak.com/api")
-    V1 = url(r"https://api.streak.com/api/v1")
-    V2 = url(r"https://api.streak.com/api/v2")
+    @property
+    def complete(self):
+        return str(self)
+
+    def __add__(self, item):
+        return str(self) + str(item)
+
+    def joins(self, *items):
+        new_url = self.complete
+        for item in items:
+            new_url += item
+        return URL(new_url)
 
 class USER:
 
-    ME = url(BASE.ROOT + r"/v1/users/me")
-    GET = url(BASE.ROOT + r"/v1/users/{user_key}")
+    BASE = BASE()
+
+    ME = BASE + r"/api/v1/users/me"
+    GET = BASE + r"/api/v1/users/{user_key}"
 
 class TEAM:
 
-    MY = url(BASE.ROOT + r"/v2/users/me/teams")
+    BASE = BASE()
+
+    MY = BASE + r"/api/v2/users/me/teams"
 
 class PIPELINE:
 
-    GET = url(BASE.ROOT + r"/v1/pipelines/{pipeline_key}")
-    LIST = url(BASE.ROOT + r"/v1/pipelines?sortBy=creationTimestamp%20")
+    BASE = BASE()
+
+    GET = BASE + r"/api/v1/pipelines/{pipeline_key}"
+    LIST = BASE + r"/api/v1/pipelines?sortBy=creationTimestamp%20"
 
 class BOX:
 
-    GET_BY_KEY = url(BASE.ROOT + r"/v1/boxes/{box_key}")
+    BASE = BASE()
+
+    GET_BY_KEY = BASE + r"/api/v1/boxes/{box_key}"
 
     # 'get by name' endpoint parts
-    _GBN_HEAD = BASE.ROOT + r"/v1/search?"
+    _GBN_HEAD = BASE + r"/api/v1/search?"
     _GBN_TAIL = r"name={box_name}"
     _GBN_IN_PIP = r"pipelineKey={pipeline_key}&"
     _GBN_AT_STG = r"stageKey={stage_key}&"
-    GET_BY_NAME_IN_PIPELINE = url(_GBN_HEAD + _GBN_IN_PIP + _GBN_TAIL)
-    GET_BY_NAME_AT_STAGE = url(_GBN_HEAD + _GBN_AT_STG + _GBN_TAIL)
-    GET_BY_NAME_IN_PIP_AT_STAGE = url(_GBN_HEAD + _GBN_IN_PIP +
-                                      _GBN_AT_STG + _GBN_TAIL)
+    GET_BY_NAME_IN_PIPELINE = _GBN_HEAD + _GBN_IN_PIP + _GBN_TAIL
+    GET_BY_NAME_AT_STAGE = _GBN_HEAD + _GBN_AT_STG + _GBN_TAIL
+    GET_BY_NAME_IN_PIP_AT_STAGE = (_GBN_HEAD + _GBN_IN_PIP +
+                                   _GBN_AT_STG + _GBN_TAIL)
 
     # 'list box' endpoint
-    _LIST_IN_PIP = r"/v1/pipelines/{pipeline_key}"
+    _LIST_IN_PIP = r"/api/v1/pipelines/{pipeline_key}"
     _LIST_SORT = r"/boxes?sortBy=creationTimestamp"
-    _LIST_HEAD = url(BASE.ROOT + _LIST_IN_PIP + _LIST_SORT)
+    _LIST_HEAD = BASE + _LIST_IN_PIP + _LIST_SORT
 
     _LST_OPT_PAGE = r"&page={page}"
     _LST_OPT_STAGE = r"&stageKey={stage_key}"
     _LST_OPT_LIMIT = r"&limit={limit}"
 
-    FILES = url(BASE.ROOT + r"/v1/boxes/{box_key}/files")
+    FILES = BASE + r"/api/v1/boxes/{box_key}/files"
 
 
 
 class THREAD:
 
-    GET = url(BASE.ROOT + r"/v1/threads/{thread_key}")
-    LIST = url(BASE.ROOT + r"/v1/boxes/{box_key}/threads")
+    BASE = BASE()
+
+    GET = BASE + r"/api/v1/threads/{thread_key}"
+    LIST = BASE + r"/api/v1/boxes/{box_key}/threads"
 
 
 class FIELD:
 
-    GET = url(BASE.ROOT + r"/v1/pipelines/{pipeline_key}/fields/{field_key}")
-    LIST = url(BASE.ROOT + r"/v1/pipelines/{pipeline_key}/fields")
-    UPDATE = url(BASE.ROOT + r"/v1/boxes/{box_key}/fields/{field_key}")
+    BASE = BASE()
+
+    GET = BASE + r"/api/v1/pipelines/{pipeline_key}/fields/{field_key}"
+    LIST = BASE + r"/api/v1/pipelines/{pipeline_key}/fields"
+    UPDATE = BASE + r"/api/v1/boxes/{box_key}/fields/{field_key}"
 
 
 class FILE:
 
-    GET = url(BASE.ROOT + r"/v1/files/{file_key}")
-    CONTENT = url(BASE.ROOT + r"/v1/files/{file_key}/contents")
+    BASE = BASE()
+
+    GET = BASE + r"/api/v1/files/{file_key}"
+    CONTENT = BASE + r"/api/v1/files/{file_key}/contents"
 
 class EVENT:
 
-    NEW_BOX_CREATE = url(r"")
+    BASE = BASE()
+
+    NEW_BOX_CREATE = r""
