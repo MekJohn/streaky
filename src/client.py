@@ -12,15 +12,11 @@ import endpoints as enp
 
 
 
-class Client(hx.AsyncClient):
+class Client:
 
-    def __init__(self, auth_key_b64: bytes, header: dict = None) -> object:
-
-        super().__init__(header = header)
+    def __init__(self, auth_key_b64: bytes) -> object:
 
         self._auth_key_b64: bytes = auth_key_b64
-        self._add_auth_key_to_header()
-
         self._log = [(tm.time_ns(), "START", "", None)]
 
 
@@ -30,24 +26,28 @@ class Client(hx.AsyncClient):
     def __repr__(self):
         return f"<Auth '{self.key.decode()}'>"
 
+    @classmethod
+    def _DEFAULT_HEADER(cls):
+        header = hx.Headers({"accept": "application/json",
+                             'Content-Type': 'application/json'})
+        return header
 
     @classmethod
     def _DEFAULT_GET_HEADER(cls):
-        data = {"accept": "application/json",
-                "Content-Type": "application/json"}
+        data = cls._DEFAULT_HEADER()
         return data
 
-    @classmethod
-    def _DEFAULT_POST_HEADER(cls):
-        data = {"accept": "application/json",
-                "Content-Type": "application/json"}
-        return data
 
-    def _add_auth_key_to_header(self):
+    @property
+    def client(self):
+
         key = self.key.decode()
-        header_item = {"authorization_key": f"Basic {key}"}
-        self.headers.update(header_item)
-        return True
+        key_item = {"authorization_key": f"Basic {key}"}
+
+        header = self._DEFAULT_HEADER()
+        header.update(key_item)
+
+        return hx.AsyncClient(headers = header)
 
 
     def _logger(self, *data):
@@ -66,9 +66,14 @@ class Client(hx.AsyncClient):
 
 
     @classmethod
-    def connect(cls, key_filepath: str = ""):
-        key64 = cls._from_file(key_filepath)
-        return cls(key64)
+    def fromfile(cls, path: str = ""):
+
+        with open(path, "r") as file:
+            key = file.read()
+
+        encoded = key.encode()
+        encrypted = base64.b64encode(encoded)
+        return cls(encrypted)
 
 
     async def _get_task(self, client: object, url: str, timeout = None):
@@ -77,10 +82,6 @@ class Client(hx.AsyncClient):
             Creates an asynchronous task for retrieving data from a given URL.
             This coroutine prepares an asynchronous GET request to the
             specified URL using the provided client.
-
-            It is intended to be used within an event loop to create a task
-            that can be executed concurrently.
-            The response and request are logged.
 
         ARGS:
             - client: The asynchronous HTTP client to use for the request.
@@ -96,10 +97,43 @@ class Client(hx.AsyncClient):
         return response
 
 
-    async def _gather(self, *urls: str, timeout = None) -> object:
+    async def _post_task(self, client: object, url: str, payload: dict = None,
+                        timeout = None):
+        """
+        DESCRIPTION:
+            Creates an asynchronous task for retrieving data from a given URL.
+            This coroutine prepares an asynchronous POST request to the
+            specified URL using the provided client.
+
+        ARGS:
+            - client: The asynchronous HTTP client to use for the request.
+            - url: The URL to retrieve data from.
+            - timeout (optional): The timeout for the request, in seconds.
+                Defaults to None (no timeout).
+
+        RETURN:
+            The task object from the POST request.
+        """
+        response = await client.post(url, json = payload, timeout = timeout)
+        self._logger(tm.time_ns(), "POST", url, response)
+        return response
+
+
+    async def _gather_get(self, *urls: str, timeout = None) -> object:
 
         async with self.client as client:
             tasks = [self._get_task(client, url, timeout = timeout)
+                     for url in urls]
+
+            responses = await asyncio.gather(*tasks)
+            return responses
+
+    async def _gather(self, *urls: str,
+                      timeout = None) -> object:
+
+        async with self.client as client:
+            tasks = [self._post_task(client, url, payload = payload,
+                                     timeout = timeout)
                      for url in urls]
 
             responses = await asyncio.gather(*tasks)
@@ -111,37 +145,17 @@ class Client(hx.AsyncClient):
         requests = self._gather(*urls, timeout = timeout)
         loop = asyncio.get_event_loop()
         result = loop.run_until_complete(requests)
-
         return result
 
 
+    def post(self, *urls, payload: dict = None, timeout = None) -> object:
 
-
-    def post(self, url, payload: dict = None) -> object:
-        # TODO async implementation
-        query = {"authorization": f"Basic {self.key.decode()}",
-                 "accept": "application/json",
-                 "Content-Type": "application/json"}
-
-        response = req.post(url, headers = query, json = payload)
-        self._logger(tm.time_ns(), "POST", url, response)
-        return response
-
-        requests = self._post_async(*urls, timeout = timeout)
+        requests = self._gather(*urls, timeout = timeout)
         loop = asyncio.get_event_loop()
         result = loop.run_until_complete(requests)
-
         return result
 
 
-
-
-    @staticmethod
-    def _from_file(key_filepath: str = "") -> bytes:
-        with open(key_filepath, "r") as file:
-            key = file.read()
-        encrypted_key = base64.b64encode(key.encode())
-        return encrypted_key
 
 
 
