@@ -11,7 +11,7 @@ import endpoints as enp
 
 # Insert your api key here.
 
-class Auth:
+class Client:
 
     def __init__(self, auth64: bytes) -> object:
         self._auth64: bytes = auth64
@@ -36,11 +36,16 @@ class Auth:
         return hx.AsyncClient(headers = data)
 
 
+    def _logger(self, *data):
+        self._log.append(data)
+
     @property
     def log(self):
         log_columns = "Time", "Type", "Url", "Response"
         table = pd.DataFrame(data=self._log,columns=log_columns)
         return table
+
+
 
     @property
     def key(self):
@@ -53,18 +58,36 @@ class Auth:
         return cls(key64)
 
 
-    def _logger(self, *data):
-        self._log.append(data)
 
 
 
-    async def _get_task(self, client, url, timeout = None):
+
+    async def _get_task(self, client: object, url: str, timeout = None):
+        """
+        DESCRIPTION:
+            Creates an asynchronous task for retrieving data from a given URL.
+            This coroutine prepares an asynchronous GET request to the
+            specified URL using the provided client.
+
+            It is intended to be used within an event loop to create a task
+            that can be executed concurrently.
+            The response and request are logged.
+
+        ARGS:
+            - client: The asynchronous HTTP client to use for the request.
+            - url: The URL to retrieve data from.
+            - timeout (optional): The timeout for the request, in seconds.
+                Defaults to None (no timeout).
+
+        RETURN:
+            The task object from the GET request.
+        """
         response = await client.get(url, timeout = timeout)
         self._logger(tm.time_ns(), "GET", url, response)
         return response
 
 
-    async def get(self, *urls: str, timeout = None) -> object:
+    async def _get_async(self, *urls: str, timeout = None) -> object:
 
         async with self.client as client:
             tasks = [self._get_task(client, url, timeout = timeout)
@@ -72,6 +95,16 @@ class Auth:
 
             responses = await asyncio.gather(*tasks)
             return responses
+
+    @classmethod
+    def get(cls, *urls: str, timeout = None) -> list:
+
+        auth = cls.connect(r"key.txt")
+        endpoint = enp.PIPELINE.LIST
+        loop = asyncio.get_event_loop()
+        result = loop.run_until_complete(auth._get_async(endpoint))
+
+        return result[0]
 
 
     def post(self, url, payload: dict = None) -> object:
@@ -463,15 +496,8 @@ class FileAPI:
             return filedata
 
 
-tempo = tm.time()
 
-auth = Auth.connect(r"..\key.txt")
-endpoint = enp.PIPELINE.LIST
-loop = asyncio.get_event_loop()
-result = loop.run_until_complete(auth.get(endpoint))
-
-tempo = tm.time() - tempo
-print(tempo, "s")
-
+res = Auth.get()
+print(res[0])
 
 
