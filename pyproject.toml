@@ -1,6 +1,6 @@
 [project]
 
-name = "streak"
+name = "streaky"
 version = "1.0.0"
 authors = [{name="MekJohn", email="gaudio90@hotmail.it" },]
 
