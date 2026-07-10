@@ -17,16 +17,16 @@ class Endpoint:
 
 class BoxEP:
 
-    def __init__(self, box):
-        self._box = box
+    def __init__(self, pipeline_key: str):
+        self.pip_key = pipeline_key
 
     @property
     def list(self):
-        return f"https://api.streak.com/api/v1/pipelines/{self._box.pipeline.key}/boxes?sortBy=creationTimestamp"
+        return f"https://api.streak.com/api/v1/pipelines/{self.pip_key}/boxes?sortBy=creationTimestamp"
 
     @property
     def batch(self):
-        return f"https://api.streak.com/api/v1/pipelines/{self._box.pipeline.key}/boxes/batch/"
+        return f"https://api.streak.com/api/v1/pipelines/{self.pip_key}/boxes/batch/"
 
 
 
@@ -57,17 +57,30 @@ class FileEP:
         return f"https://api.streak.com/api/v1/files/{self.box.key}/contents"
 
 
-@dataclass
-class FileData:
 
-    name: str
-    key: str = field(repr = None)
-    json: dict = field(repr = None)
+class File:
+
+    def __init__(self, file_handler: object, file_json: dict):
+        self.handler = file_handler
+        self.json = file_json
+
+    @property
+    def _req_header(self):
+        return self.handler._req_header
+
+    @property
+    def name(self):
+        return self.json["fileName"]
+
+    @property
+    def key(self):
+        return self.json["fileKey"]
+
 
     @property
     def content(self):
         endpoint = f"https://api.streak.com/api/v1/files/{self.key}/contents"
-        content = rq.get(url = endpoint, headers = Streak.GETHEADER()).content
+        content = rq.get(url = endpoint, headers = self._req_header).content
         return content
 
     def save(self, target: str = None):
@@ -78,17 +91,182 @@ class FileData:
         return target
 
 
+
+class FileHandler:
+
+    def __init__(self, box):
+        self.box = box
+
+    @property
+    def _req_header(self):
+        return self.box._req_header
+
+    @property
+    def endpoints(self):
+        return FileEP(self.box)
+
+    @property
+    def list(self):
+        response = rq.get(
+            url = self.endpoints.list, headers = self.box.handler.pipeline.handler.streak.req_header
+            ).json()
+        files = [File(self, f) for f in response]
+        return files
+
+
+
 @dataclass
-class BoxData:
+class StreakData:
 
     name: str
     key: str = field(repr = None)
     json: dict = field(repr = None)
 
+    @property
+    def endpoints(self):
+        return Endpoint(self)
+
+
+class Pipeline:
+
+    def __init__(self, pip_handler: object, pip_json: dict):
+        self.handler = pip_handler
+        self.json = pip_json
+
+    @property
+    def _req_header(self):
+        return self.handler.streak.req_header
+
+    @property
+    def name(self):
+        return self.json["name"]
+
+    @property
+    def key(self):
+        return self.json["key"]
+
+    @property
+    def endpoints(self):
+        return Endpoint(self)
+
+    @property
+    def boxes(self):
+        return BoxHandler(self)
+
+    @property
+    def stages(self):
+        endpoint = f"https://api.streak.com/api/v1/pipelines/{self.key}/stages"
+        response = rq.get(url = endpoint, headers = self._req_header).json()
+        stages = []
+        for k, v in response.items():
+            stage = StreakData(name = v["name"], key = v["key"], json = v)
+            stages.append(stage)
+        return stages
+
+    @property
+    def history(self):
+        endpoint = f"https://api.streak.com/api/v1/pipelines/{self.key}/newsfeed?detailLevel=ALL"
+        response = rq.get(url = endpoint, headers = self._req_header).json()
+        history = []
+        for h in response:
+            crono = StreakData(name = h["timestamp"], key = h["key"], json = h)
+            history.append(crono)
+        return history
+
+    @property
+    def fields(self):
+        endpoint = f"https://api.streak.com/api/v1/pipelines/{self.key}/fields"
+        response = rq.get(url = endpoint, headers = self._req_header).json()
+        fields = []
+        for fd in response:
+            field = StreakData(name = fd["name"], key = fd["key"], json = fd)
+            fields.append(field)
+        return fields
+
+
+class PipelineHandler:
+
+    def __init__(self, streak):
+        self.streak = streak
+
+    @property
+    def _req_header(self):
+        return self.streak.req_header
+
+    @property
+    def _ep_list(self):
+        return PipelineEP.list()
+
+
+    @property
+    def boxes(self):
+        return BoxHandler(self)
+
+    @property
+    def list(self):
+        response = rq.get(url = self._ep_list, headers = self._req_header).json()
+        pipelines = [Pipeline(self, p) for p in response]
+        return pipelines
+
+
+
+class BoxHandler:
+
+    def __init__(self, pipeline: PipelineHandler):
+        self.pipeline = pipeline
+
+    @property
+    def _req_header(self):
+        return self.pipeline._req_header
+
+    @property
+    def endpoints(self):
+        return BoxEP(self.pipeline.key)
+
+    @property
+    def list(self):
+        boxes_dict = rq.get(
+            url = self.endpoints.list,
+            headers = self._req_header
+            )
+        boxes_json = boxes_dict.json()
+        boxes = [Box(self, b) for b in boxes_json]
+        return boxes
+
+    def batch(self, *keys: str):
+        boxes = rq.post(
+            url = self.endpoints.batch, json = keys, headers = Streak.GETHEADER()
+            ).json()
+        return boxes
+
+
+
+class Box:
+
+    def __init__(self, box_handler: object, box_json: dict):
+        self.handler = box_handler
+        self.json = box_json
+
+    @property
+    def _req_header(self):
+        return self.handler._req_header
+
+    @property
+    def name(self):
+        return self.json["name"]
+
+    @property
+    def key(self):
+        return self.json["boxKey"]
+
+    @property
+    def endpoints(self):
+        return Endpoint(self)
+
 
     @property
     def files(self):
-        return File(self)
+        return FileHandler(self)
 
     @property
     def list(self):
@@ -155,136 +333,14 @@ class BoxData:
 
 
 
-class File:
 
-    def __init__(self, box):
-        self.box = box
-
-    @property
-    def endpoints(self):
-        return FileEP(self.box)
-
-    @property
-    def list(self):
-        response = rq.get(
-            url = self.endpoints.list, headers = Streak.GETHEADER()
-            ).json()
-        files = [FileData(
-            name = f["fileName"], key = f["fileKey"], json=f)
-            for f in response]
-        return files
-
-
-class Box:
-
-    def __init__(self, pipeline):
-        self.pipeline = pipeline
-
-    @property
-    def endpoints(self):
-        return BoxEP(self)
-
-    @property
-    def list(self):
-        boxes_dict = rq.get(
-            url = self.endpoints.list, headers = Streak.GETHEADER()
-            ).json()
-        boxes = [BoxData(name = b["name"], key = b["boxKey"], json=b)
-                         for b in boxes_dict]
-        return boxes
-
-    def batch(self, *keys: str):
-        boxes = rq.post(
-            url = self.endpoints.batch, json = keys, headers = Streak.GETHEADER()
-            ).json()
-        return boxes
-
-
-
-@dataclass
-class StreakData:
-
-    name: str
-    key: str = field(repr = None)
-    json: dict = field(repr = None)
-
-    @property
-    def endpoints(self):
-        return Endpoint(self)
-
-
-class PipelineData(StreakData):
-
-    name: str
-    key: str = field(repr = None)
-    json: dict = field(repr = None)
-
-    @property
-    def boxes(self):
-        return Box(self)
-
-    @property
-    def stages(self):
-        endpoint = f"https://api.streak.com/api/v1/pipelines/{self.key}/stages"
-        response = rq.get(url = endpoint, headers = Streak.GETHEADER()).json()
-        stages = []
-        for k, v in response.items():
-            stage = StreakData(name = v["name"], key = v["key"], json = v)
-            stages.append(stage)
-        return stages
-
-    @property
-    def history(self):
-        endpoint = f"https://api.streak.com/api/v1/pipelines/{self.key}/newsfeed?detailLevel=ALL"
-        response = rq.get(url = endpoint, headers = Streak.GETHEADER()).json()
-        history = []
-        for h in response:
-            crono = StreakData(name = h["timestamp"], key = h["key"], json = h)
-            history.append(crono)
-        return history
-
-    @property
-    def fields(self):
-        endpoint = f"https://api.streak.com/api/v1/pipelines/{self.key}/fields"
-        response = rq.get(url = endpoint, headers = Streak.GETHEADER()).json()
-        fields = []
-        for fd in response:
-            field = StreakData(name = fd["name"], key = fd["key"], json = fd)
-            fields.append(field)
-        return fields
-
-
-class Pipeline:
-
-    def __init__(self, streak):
-        self.streak = streak
-
-    @property
-    def _ep_list(self):
-        return PipelineEP.list()
-
-    @property
-    def _header(self):
-        return Streak.GETHEADER()
-
-    @property
-    def boxes(self):
-        return Box(self)
-
-    @property
-    def list(self):
-        response = rq.get(url = self._ep_list, headers = self._header).json()
-        pipelines = []
-        for p in response:
-            pip = PipelineData(name = p["name"], key = p["key"], json = p)
-            pipelines.append(pip)
-        return pipelines
 
 
 class Streak:
 
-    def __init__(self):
-        self.key = self.streak_key_b64()
+    def __init__(self, key_path: str):
+        self.key = self.streak_key_b64(key_path = key_path)
+        self.req_header = self.GETHEADER(key_path)
 
     @property
     def endpoints(self):
@@ -292,11 +348,11 @@ class Streak:
 
     @property
     def pipelines(self):
-        return Pipeline(self)
+        return PipelineHandler(self)
 
-    @property
-    def req_header(self):
-        return self.GETHEADER()
+    # @property
+    # def req_header(self):
+    #     return self.GETHEADER(key_path)
 
     def walk(self):
         for pip in self.pipelines.list:
@@ -392,14 +448,17 @@ class Streak:
 
     @staticmethod
     def streak_key_b64(key_path: str = None):
-        key_path = "key.txt" if key_path is None else key_path
-        with open(key_path, "r") as f:
-            streak_key = f.read().encode()
-        return b64.urlsafe_b64encode(streak_key).decode()
+        if key_path and os.path.exists(key_path):
+            with open(key_path, "r") as f:
+                streak_key = f.read().encode()
+            return b64.urlsafe_b64encode(streak_key).decode()
+        else:
+            raise FileExistsError
 
     @classmethod
-    def GETHEADER(cls):
-        streak_key = cls.streak_key_b64()
+    def GETHEADER(cls, key_path):
+        print(key_path)
+        streak_key = cls.streak_key_b64(key_path = key_path)
         headers = {
             "accept": "application/json",
             "Content-Type": "application/json",
@@ -409,8 +468,10 @@ class Streak:
 
 
 if __name__ == "__main__":
-    streak = Streak()
-    pipeline = streak.pipelines.list[0]
+
+    key_path = r"\\iliadbox_Server\Home-Drive\projects\streak.txt"
+    streak = Streak(key_path)
+    pipeline = streak.pipelines.list[1]
     box = pipeline.boxes.list[45]
     file = box.files.list[0]
     content = file.content
