@@ -469,7 +469,7 @@ class Streak:
 
 if __name__ == "__main__":
 
-    key_path = r"\\iliadbox_Server\Home-Drive\projects\streak.txt"
+    key_path = input("Key file path: ")
     streak = Streak(key_path)
     pipeline = streak.pipelines.list[1]
     box = pipeline.boxes.list[45]
