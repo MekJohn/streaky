@@ -457,7 +457,6 @@ class Streak:
 
     @classmethod
     def GETHEADER(cls, key_path):
-        print(key_path)
         streak_key = cls.streak_key_b64(key_path = key_path)
         headers = {
             "accept": "application/json",
